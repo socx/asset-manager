@@ -1,0 +1,160 @@
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  // Explicit output ensures the generated client lands in the monorepo root
+  // node_modules so all workspaces can import it without hoisting issues.
+  output   = "../../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────────────────────────
+
+enum Role {
+  super_admin
+  system_admin
+  asset_manager
+  asset_owner
+}
+
+enum UserStatus {
+  pending_verification
+  active
+  disabled
+}
+
+enum LogLevel {
+  debug
+  info
+  warn
+  error
+  fatal
+}
+
+// ── Models ─────────────────────────────────────────────────────────────────────
+
+/// NOTE: Primary keys use gen_random_uuid() (UUID v4) for now.
+/// UUID v7 requires a custom PostgreSQL function — planned for a follow-up migration.
+model User {
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email               String     @unique
+  passwordHash        String     @map("password_hash")
+  firstName           String     @map("first_name")
+  lastName            String     @map("last_name")
+  role                Role       @default(asset_owner)
+  status              UserStatus @default(pending_verification)
+  emailVerifiedAt     DateTime?  @map("email_verified_at")
+  mfaEnabled          Boolean    @default(false) @map("mfa_enabled")
+  mfaSecret           String?    @map("mfa_secret")
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?  @map("locked_until")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  deletedAt           DateTime?  @map("deleted_at")
+
+  sessions            UserSession[]
+  emailVerifications  EmailVerification[]
+  passwordResetTokens PasswordResetToken[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  refreshTokenHash  String    @map("refresh_token_hash")
+  deviceFingerprint String?   @map("device_fingerprint")
+  ipAddress         String?   @map("ip_address")
+  userAgent         String?   @map("user_agent")
+  expiresAt         DateTime  @map("expires_at")
+  revokedAt         DateTime? @map("revoked_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model EmailVerification {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verifications")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+/// Append-only audit log. Partitioned by month via raw SQL migration (planned iteration 1).
+/// DB trigger prevents UPDATE and DELETE on this table.
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorRole  String?  @map("actor_role")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// System log for warn/error/fatal level events. Partitioned by month via raw SQL migration.
+model SystemLog {
+  id        BigInt   @id @default(autoincrement())
+  level     LogLevel
+  service   String
+  message   String
+  context   Json?
+  traceId   String?  @map("trace_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([level])
+  @@index([createdAt])
+  @@index([traceId])
+  @@map("system_logs")
+}
+
+model SystemSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}

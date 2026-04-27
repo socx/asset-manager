@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Type-check, Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: asset_user
+          POSTGRES_PASSWORD: asset_pass
+          POSTGRES_DB: asset_manager_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://asset_user:asset_pass@localhost:5432/asset_manager_test
+      REDIS_URL: redis://localhost:6379
+      # Non-secret test values — real secrets are in GitHub Secrets for deploy workflows
+      JWT_ACCESS_SECRET: test_jwt_secret_that_is_at_least_32_characters_long
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      APP_BASE_URL: http://localhost:5173
+      API_PORT: 3000
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      EMAIL_FROM: noreply@test.local
+      SELF_REGISTRATION_ENABLED: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Run database migrations
+        run: npm run db:migrate
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test

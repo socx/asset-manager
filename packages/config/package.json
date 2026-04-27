@@ -1,0 +1,8 @@
+{
+  "name": "@asset-manager/config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./eslint": "./eslint/index.cjs"
+  }
+}

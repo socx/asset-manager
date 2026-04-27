@@ -1,0 +1,30 @@
+{
+  "name": "asset-manager",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --names \"api,web,worker\" --prefix-colors \"blue,green,yellow\" \"npm run dev -w apps/api\" \"npm run dev -w apps/web\" \"npm run dev -w apps/worker\"",
+    "dev:secure": "npm run dev:secure -w apps/api",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint --ext .ts,.tsx apps/api/src apps/web/src apps/worker/src packages/db/src packages/types/src",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "db:migrate": "npm run migrate -w packages/db",
+    "db:migrate:reset": "npm run migrate:reset -w packages/db",
+    "db:seed": "npm run seed -w packages/db",
+    "db:studio": "npm run studio -w packages/db",
+    "db:generate": "npm run generate -w packages/db"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^8.57.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.7.3"
+  }
+}

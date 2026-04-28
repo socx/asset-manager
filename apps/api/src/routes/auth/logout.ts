@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import crypto from 'crypto';
 import { prisma } from '@asset-manager/db';
 import { REFRESH_COOKIE_NAME } from '../../lib/jwt';

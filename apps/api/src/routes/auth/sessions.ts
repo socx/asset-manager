@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import { prisma } from '@asset-manager/db';
 import {
   signAccessToken,
-  verifyAccessToken,
   refreshExpiryDate,
   REFRESH_COOKIE_NAME,
   REFRESH_COOKIE_OPTIONS,
@@ -96,7 +95,8 @@ export async function refreshHandler(req: Request, res: Response): Promise<void>
 // ── List sessions (GET /auth/sessions) ───────────────────────────────────────
 
 export async function listSessionsHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const userId = req.user!.sub;
+  if (!req.user) { res.status(401).json({ message: 'Unauthorized.' }); return; }
+  const userId = req.user.sub;
 
   const sessions = await prisma.userSession.findMany({
     where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
@@ -116,7 +116,8 @@ export async function listSessionsHandler(req: AuthenticatedRequest, res: Respon
 // ── Revoke one session (DELETE /auth/sessions/:sessionId) ─────────────────────
 
 export async function revokeSessionHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const userId = req.user!.sub;
+  if (!req.user) { res.status(401).json({ message: 'Unauthorized.' }); return; }
+  const userId = req.user.sub;
   const sessionId = req.params['sessionId'] as string;
 
   const session = await prisma.userSession.findFirst({
@@ -149,7 +150,8 @@ export async function revokeSessionHandler(req: AuthenticatedRequest, res: Respo
 // ── Revoke all sessions (DELETE /auth/sessions) ───────────────────────────────
 
 export async function revokeAllSessionsHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const userId = req.user!.sub;
+  if (!req.user) { res.status(401).json({ message: 'Unauthorized.' }); return; }
+  const userId = req.user.sub;
 
   await prisma.userSession.updateMany({
     where: { userId, revokedAt: null },

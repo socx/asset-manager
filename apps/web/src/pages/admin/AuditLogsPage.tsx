@@ -128,7 +128,7 @@ export default function AuditLogsPage() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ['admin', 'audit-logs', applied, cursor],
-    queryFn: () => listAuditLogs(params, accessToken!),
+    queryFn: () => listAuditLogs(params, accessToken ?? ''),
     enabled: !!accessToken,
   });
 

@@ -35,6 +35,7 @@ class DBTransport extends Transport {
 
     setImmediate(() => {
       // Strip internal winston symbols and well-known format fields from context
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { level, message, traceId, service: _s, timestamp: _t, ...rest } = info as Record<string, unknown>;
       const context = Object.keys(rest).length ? rest : undefined;
 

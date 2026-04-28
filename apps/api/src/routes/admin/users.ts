@@ -162,8 +162,8 @@ export async function createUserHandler(
   });
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action: 'USER_CREATED',
     entityType: 'user',
     entityId: user.id,
@@ -173,7 +173,7 @@ export async function createUserHandler(
   });
 
   logger.info('[admin/users] User created by admin', {
-    actorId: req.user!.sub,
+    actorId: req.user?.sub ?? '',
     newUserId: user.id,
   });
 
@@ -207,7 +207,7 @@ export async function updateUserHandler(
 
   // Prevent admins from editing themselves (role demotion safety)
   // They may still edit name/email but not their own role
-  if (id === req.user!.sub && role && role !== user.role) {
+  if (id === req.user?.sub && role && role !== user.role) {
     res.status(400).json({ message: 'You cannot change your own role.' });
     return;
   }
@@ -260,8 +260,8 @@ export async function updateUserHandler(
     role !== undefined && role !== oldValue.role ? 'ROLE_CHANGED' : 'USER_UPDATED';
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action,
     entityType: 'user',
     entityId: id,
@@ -289,7 +289,7 @@ export async function setUserStatusHandler(
   const { status } = req.body;
 
   // Prevent self-disable
-  if (id === req.user!.sub) {
+  if (id === req.user?.sub) {
     res.status(400).json({ message: 'You cannot change your own account status.' });
     return;
   }
@@ -325,8 +325,8 @@ export async function setUserStatusHandler(
   const action = status === 'active' ? 'USER_ENABLED' : 'USER_DISABLED';
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action,
     entityType: 'user',
     entityId: id,
@@ -348,7 +348,7 @@ export async function deleteUserHandler(
   const id = req.params.id as string;
 
   // Prevent self-deletion
-  if (id === req.user!.sub) {
+  if (id === req.user?.sub) {
     res.status(400).json({ message: 'You cannot delete your own account.' });
     return;
   }
@@ -375,8 +375,8 @@ export async function deleteUserHandler(
   ]);
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action: 'USER_DELETED',
     entityType: 'user',
     entityId: id,
@@ -415,8 +415,8 @@ export async function resetUserMfaHandler(
   ]);
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action: 'USER_MFA_RESET',
     entityType: 'user',
     entityId: id,
@@ -485,8 +485,8 @@ export async function revokeUserSessionHandler(
   });
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action: 'USER_SESSION_REVOKED',
     entityType: 'user_session',
     entityId: sessionId,

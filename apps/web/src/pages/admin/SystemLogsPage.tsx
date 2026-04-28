@@ -117,7 +117,7 @@ export default function SystemLogsPage() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ['admin', 'system-logs', applied, cursor],
-    queryFn: () => listSystemLogs(params, accessToken!),
+    queryFn: () => listSystemLogs(params, accessToken ?? ''),
     enabled: !!accessToken,
   });
 
@@ -287,7 +287,7 @@ export default function SystemLogsPage() {
                     <td className="py-2.5 px-4">
                       {log.traceId ? (
                         <button
-                          onClick={(e) => { e.stopPropagation(); drillDownTrace(log.traceId!); }}
+                          onClick={(e) => { e.stopPropagation(); drillDownTrace(log.traceId as string); }}
                           className="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
                           title="Filter by this trace ID"
                         >
@@ -312,7 +312,7 @@ export default function SystemLogsPage() {
         {data?.nextCursor && !isFetching && (
           <div className="mt-4 text-center">
             <button
-              onClick={() => setCursor(data.nextCursor!)}
+              onClick={() => setCursor(data.nextCursor ?? undefined)}
               className="text-sm bg-white border border-gray-300 text-gray-700 rounded px-4 py-2 hover:bg-gray-50"
             >
               Load more

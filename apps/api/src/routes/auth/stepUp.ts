@@ -15,7 +15,7 @@ export const STEP_UP_TTL = 30 * 60; // 30 minutes in seconds
  * Admin actions use requireStepUp middleware to verify this window.
  */
 export async function stepUpHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const userId = req.user!.sub;
+  const userId = req.user?.sub ?? '';
   const { password } = req.body as { password?: string };
 
   if (!password) {

@@ -71,8 +71,8 @@ export async function updateSettingHandler(
   await setSetting(typedKey, value);
 
   await createAuditLog({
-    actorId: req.user!.sub,
-    actorRole: req.user!.role,
+    actorId: req.user?.sub ?? '',
+    actorRole: req.user?.role ?? '',
     action: 'SETTING_UPDATED',
     entityType: 'system_setting',
     entityId: key,
@@ -82,7 +82,7 @@ export async function updateSettingHandler(
     userAgent: req.get('user-agent'),
   });
 
-  logger.info('[settings] Setting updated', { key, oldValue, newValue: value, actorId: req.user!.sub });
+  logger.info('[settings] Setting updated', { key, oldValue, newValue: value, actorId: req.user?.sub ?? '' });
 
   res.json({ key: typedKey, value, message: 'Setting updated successfully.' });
 }

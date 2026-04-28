@@ -106,13 +106,13 @@ export default function SettingsPage() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin', 'settings'],
-    queryFn: () => listSettings(accessToken!),
+    queryFn: () => listSettings(accessToken ?? ''),
     enabled: !!accessToken,
   });
 
   const mutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: string }) =>
-      updateSetting(key, value, accessToken!),
+      updateSetting(key, value, accessToken ?? ''),
     onSuccess: (_, { key }) => {
       setSuccessKey(key);
       setErrorMsg(null);

@@ -1,8 +1,9 @@
-// Stub for Jest — used by non-MFA tests that don't need real TOTP functionality.
-// mfa.test.ts overrides this via jest.mock('otplib', () => { ... }).
+// Stub for Jest — plain functions (no jest.fn()) to avoid shared state between
+// parallel workers. Tests that need to assert on these calls should use their own
+// jest.mock('otplib', factory) override (e.g. mfa.test.ts).
 module.exports = {
-  generateSecret: jest.fn().mockReturnValue('STUB_SECRET'),
-  generateURI: jest.fn().mockReturnValue('otpauth://totp/stub'),
-  verify: jest.fn().mockResolvedValue({ valid: false }),
-  generate: jest.fn().mockResolvedValue('000000'),
+  generateSecret: () => 'STUB_SECRET',
+  generateURI: () => 'otpauth://totp/stub',
+  verify: () => Promise.resolve({ valid: false }),
+  generate: () => Promise.resolve('000000'),
 };

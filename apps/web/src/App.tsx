@@ -8,6 +8,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import MfaChallengePage from './pages/MfaChallengePage';
 import MfaSetupPage from './pages/MfaSetupPage';
+import AdminPage from './pages/AdminPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,12 +17,14 @@ const queryClient = new QueryClient({
   },
 });
 
+const ADMIN_ROLES = ['super_admin', 'system_admin'];
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Public routes */}
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -28,7 +32,34 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/mfa-challenge" element={<MfaChallengePage />} />
-          <Route path="/mfa/setup" element={<MfaSetupPage />} />
+
+          {/* Authenticated routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mfa/setup"
+            element={
+              <ProtectedRoute>
+                <MfaSetupPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin-only routes (ITER-1-013) */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roles={ADMIN_ROLES}>
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { mfaVerify, ApiResponseError } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
+import { getDefaultRedirect } from '../lib/roleRedirect';
 
 interface LocationState {
   sessionChallenge?: string;
@@ -50,7 +51,7 @@ export default function MfaChallengePage() {
 
       const result = await mfaVerify(payload);
       setAuth(result.user, result.accessToken);
-      navigate('/');
+      navigate(getDefaultRedirect(result.user.role), { replace: true });
     } catch (err) {
       if (err instanceof ApiResponseError) {
         setServerError(err.message || 'Verification failed. Please try again.');

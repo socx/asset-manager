@@ -1,18 +1,23 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loginSchema } from '@asset-manager/types';
 import type { LoginInput } from '@asset-manager/types';
 import { login as loginApi, ApiResponseError } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
+import { getDefaultRedirect } from '../lib/roleRedirect';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+
+  // If ProtectedRoute sent us here with a `from` location, go back there after login.
+  const from = (location.state as { from?: { pathname: string } } | null)?.from;
 
   const {
     register,
@@ -38,7 +43,8 @@ export default function LoginPage() {
 
       const loginResult = result as Exclude<typeof result, { mfaRequired: true }>;
       setAuth(loginResult.user, loginResult.accessToken);
-      navigate('/');
+      const destination = from?.pathname ?? getDefaultRedirect(loginResult.user.role);
+      navigate(destination, { replace: true });
     } catch (err) {
       if (err instanceof ApiResponseError) {
         if (err.status === 403 && (err as ApiResponseError & { code?: string }).code === 'EMAIL_NOT_VERIFIED') {

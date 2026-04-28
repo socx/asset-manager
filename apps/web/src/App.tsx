@@ -12,6 +12,7 @@ import AdminPage from './pages/AdminPage';
 import UsersPage from './pages/admin/UsersPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import AuditLogsPage from './pages/admin/AuditLogsPage';
+import SystemLogsPage from './pages/admin/SystemLogsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient({
@@ -84,6 +85,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={ADMIN_ROLES}>
                 <AuditLogsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/system-logs"
+            element={
+              <ProtectedRoute roles={ADMIN_ROLES}>
+                <SystemLogsPage />
               </ProtectedRoute>
             }
           />

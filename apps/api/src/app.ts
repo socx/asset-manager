@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './env';
 import { logger } from './lib/logger';
+import { traceIdMiddleware } from './middleware/traceId';
 import { healthHandler } from './routes/health';
 import { router } from './routes';
 
@@ -30,6 +31,9 @@ export function createApp(): Application {
 
   // Parse cookies (needed for HttpOnly refresh token)
   app.use(cookieParser());
+
+  // Attach trace ID to every request
+  app.use(traceIdMiddleware);
 
   // Health check — no auth required, not versioned
   app.get('/health', healthHandler);

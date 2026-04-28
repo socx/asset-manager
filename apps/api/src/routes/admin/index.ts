@@ -16,6 +16,7 @@ import {
 } from './users';
 import { listSettingsHandler, updateSettingHandler } from './settings';
 import { listAuditLogsHandler } from './auditLogs';
+import { listSystemLogsHandler } from './systemLogs';
 
 export const adminRouter = Router();
 
@@ -47,3 +48,6 @@ adminRouter.patch('/settings/:key', requireRole(Role.SUPER_ADMIN), updateSetting
 
 // Audit logs
 adminRouter.get('/audit-logs', listAuditLogsHandler);
+
+// System logs
+adminRouter.get('/system-logs', listSystemLogsHandler);

@@ -225,3 +225,48 @@ export function listAuditLogs(
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return adminReq<ListAuditLogsResponse>(`/audit-logs${query}`, { method: 'GET' }, accessToken);
 }
+
+// ── System Logs ───────────────────────────────────────────────────────────────
+
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+export interface SystemLog {
+  id: string;
+  level: LogLevel;
+  service: string;
+  message: string;
+  context: unknown;
+  traceId: string | null;
+  createdAt: string;
+}
+
+export interface ListSystemLogsParams {
+  level?: LogLevel;
+  service?: string;
+  traceId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface ListSystemLogsResponse {
+  logs: SystemLog[];
+  nextCursor: string | null;
+}
+
+export function listSystemLogs(
+  params: ListSystemLogsParams,
+  accessToken: string,
+): Promise<ListSystemLogsResponse> {
+  const qs = new URLSearchParams();
+  if (params.level) qs.set('level', params.level);
+  if (params.service) qs.set('service', params.service);
+  if (params.traceId) qs.set('traceId', params.traceId);
+  if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+  if (params.dateTo) qs.set('dateTo', params.dateTo);
+  if (params.cursor) qs.set('cursor', params.cursor);
+  if (params.limit) qs.set('limit', String(params.limit));
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return adminReq<ListSystemLogsResponse>(`/system-logs${query}`, { method: 'GET' }, accessToken);
+}

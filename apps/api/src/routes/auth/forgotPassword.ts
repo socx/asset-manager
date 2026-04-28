@@ -6,9 +6,9 @@ import { env } from '../../env';
 import { queueEmail } from '../../lib/email';
 import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
+import { getNumSetting } from '../../lib/settings';
 
 const GENERIC_RESPONSE = { message: 'If that email is registered you will receive a reset link shortly.' };
-const RESET_EXPIRY_MS = 60 * 60 * 1_000; // 1 hour
 
 export async function forgotPasswordHandler(
   req: Request<Record<string, never>, unknown, ForgotPasswordInput>,
@@ -37,7 +37,8 @@ export async function forgotPasswordHandler(
 
   const rawToken = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + RESET_EXPIRY_MS);
+  const resetExpiryHours = await getNumSetting('PASSWORD_RESET_EXPIRY_HOURS');
+  const expiresAt = new Date(Date.now() + resetExpiryHours * 3_600_000);
 
   await prisma.passwordResetToken.create({
     data: { userId: user.id, tokenHash, expiresAt },

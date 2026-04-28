@@ -14,6 +14,7 @@ import {
   listUserSessionsHandler,
   revokeUserSessionHandler,
 } from './users';
+import { listSettingsHandler, updateSettingHandler } from './settings';
 
 export const adminRouter = Router();
 
@@ -38,3 +39,7 @@ adminRouter.post(
 // Session management
 adminRouter.get('/users/:id/sessions', listUserSessionsHandler);
 adminRouter.delete('/users/:id/sessions/:sessionId', revokeUserSessionHandler);
+
+// System settings
+adminRouter.get('/settings', listSettingsHandler);
+adminRouter.patch('/settings/:key', requireRole(Role.SUPER_ADMIN), updateSettingHandler);

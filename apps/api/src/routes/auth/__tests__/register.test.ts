@@ -21,7 +21,6 @@ const mockUser = {
 
 jest.mock('@asset-manager/db', () => ({
   prisma: {
-    systemSetting: { findUnique: jest.fn() },
     user: { findFirst: jest.fn() },
     auditLog: { create: jest.fn() },
     $transaction: jest.fn(),
@@ -30,16 +29,32 @@ jest.mock('@asset-manager/db', () => ({
 
 jest.mock('../../../lib/email', () => ({ queueEmail: jest.fn().mockResolvedValue(undefined) }));
 jest.mock('../../../lib/audit', () => ({ createAuditLog: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('../../../lib/redis', () => ({
+  redis: { get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue('OK'), del: jest.fn().mockResolvedValue(1) },
+}));
+jest.mock('../../../lib/settings', () => ({
+  getBoolSetting: jest.fn().mockResolvedValue(true),
+  getNumSetting: jest.fn().mockResolvedValue(24),
+  getSetting: jest.fn().mockResolvedValue('true'),
+  setSetting: jest.fn().mockResolvedValue(undefined),
+  seedDefaultSettings: jest.fn().mockResolvedValue(undefined),
+  ALL_SETTING_KEYS: [],
+  SETTING_DEFINITIONS: {},
+}));
 
 // Retrieve mock references after jest.mock() factories have run
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { prisma: mockPrisma } = jest.requireMock('@asset-manager/db') as {
   prisma: {
-    systemSetting: { findUnique: jest.Mock };
     user: { findFirst: jest.Mock };
     auditLog: { create: jest.Mock };
     $transaction: jest.Mock;
   };
+};
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { getBoolSetting: mockGetBoolSetting } = jest.requireMock('../../../lib/settings') as {
+  getBoolSetting: jest.Mock;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -65,7 +80,7 @@ describe('POST /api/v1/auth/register', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPrisma.systemSetting.findUnique.mockResolvedValue({ value: 'true' });
+    mockGetBoolSetting.mockResolvedValue(true);
     mockPrisma.user.findFirst.mockResolvedValue(null);
     mockPrisma.auditLog.create.mockResolvedValue({});
     mockPrisma.$transaction.mockImplementation(
@@ -140,7 +155,7 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   it('returns 403 when self-registration is disabled', async () => {
-    mockPrisma.systemSetting.findUnique.mockResolvedValue({ value: 'false' });
+    mockGetBoolSetting.mockResolvedValue(false);
 
     const res = await request(app).post('/api/v1/auth/register').send(validBody);
 
@@ -148,9 +163,8 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.body.message).toMatch(/disabled/i);
   });
 
-  it('falls back to env when DB read for system setting fails', async () => {
-    // DB throws but SELF_REGISTRATION_ENABLED env is 'true' — registration should proceed
-    mockPrisma.systemSetting.findUnique.mockRejectedValue(new Error('DB unavailable'));
+  it('proceeds with registration when getBoolSetting returns true', async () => {
+    mockGetBoolSetting.mockResolvedValue(true);
 
     const res = await request(app).post('/api/v1/auth/register').send(validBody);
 

@@ -12,11 +12,10 @@ import {
 import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 import { redis } from '../../lib/redis';
+import { getNumSetting } from '../../lib/settings';
 import { MFA_CHALLENGE_PREFIX, MFA_CHALLENGE_TTL } from './mfaVerify';
 
 const INVALID_CREDENTIALS = { message: 'Invalid credentials.' };
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 30 * 60 * 1_000; // 30 minutes
 
 export async function loginHandler(
   req: Request<Record<string, never>, unknown, LoginInput>,
@@ -74,17 +73,23 @@ export async function loginHandler(
   }
 
   // ── 4. Verify password ────────────────────────────────────────────────────
+  const [maxAttempts, lockoutMinutes] = await Promise.all([
+    getNumSetting('MAX_LOGIN_ATTEMPTS'),
+    getNumSetting('ACCOUNT_LOCKOUT_MINUTES'),
+  ]);
+  const lockDurationMs = lockoutMinutes * 60_000;
+
   const passwordValid = await argon2.verify(user.passwordHash, password);
 
   if (!passwordValid) {
     const newFailCount = user.failedLoginAttempts + 1;
-    const shouldLock = newFailCount >= MAX_FAILED_ATTEMPTS;
+    const shouldLock = newFailCount >= maxAttempts;
 
     await prisma.user.update({
       where: { id: user.id },
       data: {
         failedLoginAttempts: newFailCount,
-        lockedUntil: shouldLock ? new Date(Date.now() + LOCK_DURATION_MS) : undefined,
+        lockedUntil: shouldLock ? new Date(Date.now() + lockDurationMs) : undefined,
       },
     });
 
@@ -100,8 +105,8 @@ export async function loginHandler(
 
     if (shouldLock) {
       res.status(423).json({
-        message: `Too many failed attempts. Account locked for 30 minutes.`,
-        retryAfter: LOCK_DURATION_MS / 1_000,
+        message: `Too many failed attempts. Account locked for ${lockoutMinutes} minutes.`,
+        retryAfter: lockDurationMs / 1_000,
       });
       return;
     }

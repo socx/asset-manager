@@ -48,14 +48,14 @@ export default function AdminPage() {
             title="System Logs"
             description="View structured application logs with level filtering and trace-ID drill-down."
             href="/admin/system-logs"
-            available={false}
+            available={true}
           />
           {user?.role === 'super_admin' && (
             <AdminCard
               title="System Settings"
               description="Configure platform-wide behaviour: registration, lockout policy, token expiry."
               href="/admin/settings"
-              available={false}
+              available={true}
             />
           )}
         </div>

@@ -1,7 +1,10 @@
 import { createApp } from './app';
 import { env } from './env';
+import { seedDefaultSettings } from './lib/settings';
 
 const app = createApp();
+
+void seedDefaultSettings();
 
 const server = app.listen(env.API_PORT, () => {
   console.log(`[api] Server listening on http://localhost:${env.API_PORT}`);

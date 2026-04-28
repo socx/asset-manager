@@ -10,6 +10,7 @@ import MfaChallengePage from './pages/MfaChallengePage';
 import MfaSetupPage from './pages/MfaSetupPage';
 import AdminPage from './pages/AdminPage';
 import UsersPage from './pages/admin/UsersPage';
+import SettingsPage from './pages/admin/SettingsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient({
@@ -66,6 +67,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={ADMIN_ROLES}>
                 <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute roles={['super_admin']}>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />

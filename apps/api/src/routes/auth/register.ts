@@ -7,6 +7,7 @@ import { env } from '../../env';
 import { queueEmail } from '../../lib/email';
 import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
+import { getBoolSetting, getNumSetting } from '../../lib/settings';
 
 export async function registerHandler(
   req: Request<Record<string, never>, unknown, RegisterInput>,
@@ -15,19 +16,7 @@ export async function registerHandler(
   const { email, password, firstName, lastName } = req.body;
 
   // ── 1. Check self-registration system setting ──────────────────────────────
-  let selfRegistrationEnabled = env.SELF_REGISTRATION_ENABLED;
-  try {
-    const setting = await prisma.systemSetting.findUnique({
-      where: { key: 'SELF_REGISTRATION_ENABLED' },
-      select: { value: true },
-    });
-    if (setting !== null) {
-      selfRegistrationEnabled = setting.value === 'true';
-    }
-  } catch (err) {
-    logger.error('[register] Failed to read SELF_REGISTRATION_ENABLED setting', { err });
-    // Fall back to env var — do not abort
-  }
+  const selfRegistrationEnabled = await getBoolSetting('SELF_REGISTRATION_ENABLED');
 
   if (!selfRegistrationEnabled) {
     res.status(403).json({
@@ -59,7 +48,8 @@ export async function registerHandler(
   // ── 4. Persist user + verification token atomically ───────────────────────
   const rawToken = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1_000);
+  const emailVerifyHours = await getNumSetting('EMAIL_VERIFICATION_EXPIRY_HOURS');
+  const expiresAt = new Date(Date.now() + emailVerifyHours * 3_600_000);
 
   const user = await prisma.$transaction(async (tx) => {
     const newUser = await tx.user.create({

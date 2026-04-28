@@ -151,3 +151,28 @@ export function revokeUserSession(
     accessToken,
   );
 }
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
+export interface SystemSetting {
+  key: string;
+  value: string;
+  type: 'boolean' | 'number';
+  description: string;
+}
+
+export function listSettings(accessToken: string): Promise<{ settings: SystemSetting[] }> {
+  return adminReq<{ settings: SystemSetting[] }>('/settings', { method: 'GET' }, accessToken);
+}
+
+export function updateSetting(
+  key: string,
+  value: string,
+  accessToken: string,
+): Promise<{ key: string; value: string; message: string }> {
+  return adminReq<{ key: string; value: string; message: string }>(
+    `/settings/${key}`,
+    { method: 'PATCH', body: JSON.stringify({ value }) },
+    accessToken,
+  );
+}

@@ -11,8 +11,16 @@ export interface VerifyEmailJob {
   baseUrl: string;
 }
 
-// Additional job types for future stories (password reset, notifications, etc.) extend here
-export type EmailJob = VerifyEmailJob;
+export interface ResetPasswordJob {
+  type: 'reset_password';
+  to: string;
+  firstName: string;
+  /** Raw (un-hashed) token that goes into the reset link */
+  token: string;
+  baseUrl: string;
+}
+
+export type EmailJob = VerifyEmailJob | ResetPasswordJob;
 
 let emailQueue: Queue<EmailJob> | null = null;
 

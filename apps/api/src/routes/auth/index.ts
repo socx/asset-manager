@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { registerSchema, resendVerificationSchema, loginSchema } from '@asset-manager/types';
+import { registerSchema, resendVerificationSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '@asset-manager/types';
 import { validate } from '../../middleware/validate';
-import { registrationLimiter, resendVerificationLimiter, authLimiter } from '../../middleware/rateLimiter';
+import { registrationLimiter, resendVerificationLimiter, authLimiter, forgotPasswordLimiter } from '../../middleware/rateLimiter';
 import { requireAuth } from '../../middleware/requireAuth';
 import { registerHandler } from './register';
 import { verifyEmailHandler } from './verifyEmail';
@@ -9,6 +9,8 @@ import { resendVerificationHandler } from './resendVerification';
 import { loginHandler } from './login';
 import { refreshHandler, listSessionsHandler, revokeSessionHandler, revokeAllSessionsHandler } from './sessions';
 import { logoutHandler } from './logout';
+import { forgotPasswordHandler } from './forgotPassword';
+import { resetPasswordHandler } from './resetPassword';
 
 export const authRouter = Router();
 
@@ -44,4 +46,10 @@ authRouter.delete('/sessions', requireAuth, revokeAllSessionsHandler);
 // POST /api/v1/auth/logout  (ITER-1-010)
 authRouter.post('/logout', requireAuth, logoutHandler);
 
-// Additional auth routes added in ITER-1-011 through ITER-1-012
+// POST /api/v1/auth/forgot-password  (ITER-1-011)
+authRouter.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSchema), forgotPasswordHandler);
+
+// POST /api/v1/auth/reset-password  (ITER-1-011)
+authRouter.post('/reset-password', validate(resetPasswordSchema), resetPasswordHandler);
+
+// Additional auth routes added in ITER-1-012

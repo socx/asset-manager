@@ -7,5 +7,14 @@ export interface VerifyEmailJob {
   baseUrl: string;
 }
 
+export interface ResetPasswordJob {
+  type: 'reset_password';
+  to: string;
+  firstName: string;
+  /** Raw (un-hashed) token placed in the reset link */
+  token: string;
+  baseUrl: string;
+}
+
 // Extend with additional job types as new email workflows are added
-export type EmailJob = VerifyEmailJob;
+export type EmailJob = VerifyEmailJob | ResetPasswordJob;

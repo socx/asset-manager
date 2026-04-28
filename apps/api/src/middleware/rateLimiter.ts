@@ -33,3 +33,13 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skip,
 });
+
+/** 3 forgot-password requests per IP per hour */
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1_000,
+  max: 3,
+  message: { message: 'Too many password reset requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip,
+});

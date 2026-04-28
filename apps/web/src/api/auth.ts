@@ -89,3 +89,30 @@ export function logout(): Promise<{ message: string }> {
     credentials: 'include',
   });
 }
+
+// ── Forgot Password ───────────────────────────────────────────────────────────
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+// ── Reset Password ────────────────────────────────────────────────────────────
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
+export function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

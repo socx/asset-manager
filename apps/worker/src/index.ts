@@ -58,6 +58,40 @@ function verifyEmailHtml(firstName: string, verifyLink: string): string {
 </html>`;
 }
 
+function resetPasswordHtml(firstName: string, resetLink: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f4f5; margin: 0; padding: 32px 16px; }
+    .card { max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 40px 36px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .logo { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 28px; letter-spacing: -0.3px; }
+    h1 { font-size: 22px; font-weight: 600; color: #0f172a; margin: 0 0 16px; }
+    p { color: #475569; line-height: 1.65; margin: 0 0 16px; font-size: 15px; }
+    .btn { display: inline-block; background: #0ea5e9; color: #ffffff !important; text-decoration: none; padding: 13px 28px; border-radius: 6px; font-size: 15px; font-weight: 600; }
+    .link-fallback { word-break: break-all; font-size: 12px; color: #64748b; }
+    .footer { margin-top: 32px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">&#x25A3; Asset Manager</div>
+    <h1>Reset your password</h1>
+    <p>Hi ${firstName},</p>
+    <p>We received a request to reset your Asset Manager password. Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.</p>
+    <p><a class="btn" href="${resetLink}">Reset Password</a></p>
+    <p style="margin-top:24px; font-size:13px; color:#64748b;">Or copy this link into your browser:</p>
+    <p class="link-fallback">${resetLink}</p>
+    <div class="footer">
+      If you didn't request a password reset, you can safely ignore this email. Your password has not been changed.
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 // Email job worker — processes verification emails, password resets, notifications
 const emailWorker = new Worker<EmailJob>(
   'email',
@@ -76,6 +110,20 @@ const emailWorker = new Worker<EmailJob>(
       });
 
       console.log(`[worker] Verification email sent to ${to}`);
+    }
+
+    if (job.name === 'reset_password') {
+      const { to, firstName, token, baseUrl } = job.data;
+      const resetLink = `${baseUrl}/reset-password?token=${token}`;
+
+      await transport.sendMail({
+        from: env.EMAIL_FROM,
+        to,
+        subject: 'Reset your Asset Manager password',
+        html: resetPasswordHtml(firstName, resetLink),
+      });
+
+      console.log(`[worker] Password reset email sent to ${to}`);
     }
   },
   { connection },

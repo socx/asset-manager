@@ -11,6 +11,287 @@ import { queueEmail } from '../../lib/email';
 import { env } from '../../env';
 import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 
+/**
+ * @openapi
+ * /admin/users:
+ *   get:
+ *     tags: [Admin · Users]
+ *     summary: List users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/CursorParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - name: role
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [admin, super_admin, user]
+ *       - name: status
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [active, inactive, unverified, suspended]
+ *       - name: search
+ *         in: query
+ *         description: Free-text filter applied to name and email fields.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Paginated list of users.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/CursorPage'
+ *                 - type: object
+ *                   properties:
+ *                     users:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AdminUser'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *   post:
+ *     tags: [Admin · Users]
+ *     summary: Create a new user
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, role]
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string, format: email }
+ *               role:
+ *                 type: string
+ *                 enum: [admin, super_admin, user]
+ *               password: { type: string, description: Auto-generated if omitted. }
+ *     responses:
+ *       201:
+ *         description: User created.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AdminUser'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       409:
+ *         $ref: '#/components/responses/Conflict'
+ *
+ * /admin/users/{id}:
+ *   get:
+ *     tags: [Admin · Users]
+ *     summary: Get a single user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: User record.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AdminUser'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   patch:
+ *     tags: [Admin · Users]
+ *     summary: Update a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string, format: email }
+ *               role:
+ *                 type: string
+ *                 enum: [admin, super_admin, user]
+ *     responses:
+ *       200:
+ *         description: Updated user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AdminUser'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   delete:
+ *     tags: [Admin · Users]
+ *     summary: Soft-delete a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: User deleted.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ * /admin/users/{id}/status:
+ *   patch:
+ *     tags: [Admin · Users]
+ *     summary: Enable or disable a user account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [enabled]
+ *             properties:
+ *               enabled: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: Status updated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ * /admin/users/{id}/reset-mfa:
+ *   post:
+ *     tags: [Admin · Users]
+ *     summary: Reset MFA for a user (super_admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: MFA reset.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ * /admin/users/{id}/sessions:
+ *   get:
+ *     tags: [Admin · Users]
+ *     summary: List active sessions of a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Sessions list.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sessions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Session'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ * /admin/users/{id}/sessions/{sessionId}:
+ *   delete:
+ *     tags: [Admin · Users]
+ *     summary: Revoke a specific session belonging to a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - name: sessionId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Session revoked.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 // ── GET /api/v1/admin/users ───────────────────────────────────────────────────
 
 export async function listUsersHandler(

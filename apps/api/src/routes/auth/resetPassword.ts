@@ -6,6 +6,43 @@ import type { ResetPasswordInput } from '@asset-manager/types';
 import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Password]
+ *     summary: Reset password using a token
+ *     description: Consumes the one-time token from the reset email to set a new password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, newPassword]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Reset token from the email link.
+ *                 example: a3f9c2d7e1b4...
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 12
+ *                 example: N3wStr0ng!Pass#
+ *     responses:
+ *       200:
+ *         description: Password reset successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         description: Token invalid/expired or password too weak.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function resetPasswordHandler(
   req: Request<Record<string, never>, unknown, ResetPasswordInput>,
   res: Response,

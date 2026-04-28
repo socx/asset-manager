@@ -12,6 +12,91 @@ import { logger } from '../../lib/logger';
 import type { AccessTokenPayload } from '../../lib/jwt';
 import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 
+/**
+ * @openapi
+ * /auth/refresh:
+ *   post:
+ *     tags: [Sessions]
+ *     summary: Refresh access token
+ *     description: >
+ *       Rotates the `refresh_token` HttpOnly cookie and returns a new short-lived access token.
+ *       The old refresh token is immediately invalidated (token rotation).
+ *     responses:
+ *       200:
+ *         description: New access token issued.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: No refresh token, or token is invalid/expired/revoked.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *
+ * /auth/sessions:
+ *   get:
+ *     tags: [Sessions]
+ *     summary: List active sessions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of active sessions for the authenticated user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sessions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Session'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *   delete:
+ *     tags: [Sessions]
+ *     summary: Revoke all sessions
+ *     description: Revokes every active session for the authenticated user (logs out everywhere).
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All sessions revoked.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *
+ * /auth/sessions/{sessionId}:
+ *   delete:
+ *     tags: [Sessions]
+ *     summary: Revoke a specific session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: sessionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Session revoked.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 // ── Token Refresh (POST /auth/refresh) ────────────────────────────────────────
 
 export async function refreshHandler(req: Request, res: Response): Promise<void> {

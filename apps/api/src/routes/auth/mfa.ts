@@ -10,7 +10,99 @@ import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 
 const BACKUP_CODE_COUNT = 8;
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+/**
+ * @openapi
+ * /auth/mfa/setup:
+ *   post:
+ *     tags: [MFA]
+ *     summary: Start MFA setup — generate TOTP secret
+ *     description: Returns a TOTP secret, QR code data URL, and one-time backup codes.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: MFA setup initiated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 secret: { type: string }
+ *                 qrCodeDataUrl: { type: string }
+ *                 backupCodes:
+ *                   type: array
+ *                   items: { type: string }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       409:
+ *         description: MFA already enabled.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *
+ * /auth/mfa/confirm:
+ *   post:
+ *     tags: [MFA]
+ *     summary: Confirm MFA setup with a TOTP code
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [totpCode]
+ *             properties:
+ *               totpCode: { type: string, example: '123456' }
+ *     responses:
+ *       200:
+ *         description: MFA enabled successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         description: Invalid TOTP code.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *
+ * /auth/mfa/disable:
+ *   post:
+ *     tags: [MFA]
+ *     summary: Disable MFA
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [totpCode]
+ *             properties:
+ *               totpCode: { type: string, example: '123456' }
+ *     responses:
+ *       200:
+ *         description: MFA disabled.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         description: Invalid or missing TOTP code.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 
 function generateBackupCodes(): { raw: string[]; hashed: string[] } {
   const raw: string[] = [];

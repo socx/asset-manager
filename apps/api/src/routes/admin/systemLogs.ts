@@ -3,6 +3,54 @@ import { prisma } from '@asset-manager/db';
 import type { Prisma } from '@prisma/client';
 import { logger } from '../../lib/logger';
 
+/**
+ * @openapi
+ * /admin/system-logs:
+ *   get:
+ *     tags: [Admin · System Logs]
+ *     summary: List system log entries
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: level
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [debug, info, warn, error, fatal]
+ *       - name: service
+ *         in: query
+ *         schema: { type: string }
+ *       - name: traceId
+ *         in: query
+ *         schema: { type: string }
+ *       - name: dateFrom
+ *         in: query
+ *         schema: { type: string, format: date-time }
+ *       - name: dateTo
+ *         in: query
+ *         schema: { type: string, format: date-time }
+ *       - $ref: '#/components/parameters/CursorParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *     responses:
+ *       200:
+ *         description: Paginated list of system log entries.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/CursorPage'
+ *                 - type: object
+ *                   properties:
+ *                     logs:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/SystemLog'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+
 // ── GET /api/v1/admin/system-logs ─────────────────────────────────────────────
 
 const VALID_LEVELS = new Set(['debug', 'info', 'warn', 'error', 'fatal']);

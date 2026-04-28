@@ -17,6 +17,68 @@ import { MFA_CHALLENGE_PREFIX, MFA_CHALLENGE_TTL } from './mfaVerify';
 
 const INVALID_CREDENTIALS = { message: 'Invalid credentials.' };
 
+/**
+ * @openapi
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Authenticate and obtain access token
+ *     description: >
+ *       Returns a short-lived JWT access token and sets an HttpOnly `refresh_token` cookie.
+ *       If the account has MFA enabled, returns `{ mfaRequired: true, sessionChallenge }` instead
+ *       and the caller must complete the flow via `POST /auth/mfa/verify`.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: alice@example.com
+ *               password:
+ *                 type: string
+ *                 example: Str0ng!Passw0rd#
+ *     responses:
+ *       200:
+ *         description: Authenticated. Returns access token or MFA challenge.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/LoginResponse'
+ *                 - $ref: '#/components/schemas/MfaRequiredResponse'
+ *       401:
+ *         description: Invalid credentials.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       403:
+ *         description: Email not verified or account disabled.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageWithCode'
+ *       423:
+ *         description: Account temporarily locked due to too many failed attempts.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 retryAfter: { type: integer, description: Seconds until the lockout lifts. }
+ *       429:
+ *         description: Rate limit exceeded.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function loginHandler(
   req: Request<Record<string, never>, unknown, LoginInput>,
   res: Response,

@@ -3,6 +3,55 @@ import { prisma } from '@asset-manager/db';
 import type { Prisma } from '@prisma/client';
 import { logger } from '../../lib/logger';
 
+/**
+ * @openapi
+ * /admin/audit-logs:
+ *   get:
+ *     tags: [Admin · Audit Logs]
+ *     summary: List audit log entries
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: actorId
+ *         in: query
+ *         schema: { type: string, format: uuid }
+ *       - name: action
+ *         in: query
+ *         schema: { type: string }
+ *       - name: entityType
+ *         in: query
+ *         schema: { type: string }
+ *       - name: entityId
+ *         in: query
+ *         schema: { type: string }
+ *       - name: dateFrom
+ *         in: query
+ *         schema: { type: string, format: date-time }
+ *       - name: dateTo
+ *         in: query
+ *         schema: { type: string, format: date-time }
+ *       - $ref: '#/components/parameters/CursorParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *     responses:
+ *       200:
+ *         description: Paginated list of audit log entries.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/CursorPage'
+ *                 - type: object
+ *                   properties:
+ *                     logs:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AuditLog'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+
 // ── GET /api/v1/admin/audit-logs ──────────────────────────────────────────────
 
 const DEFAULT_LIMIT = 50;

@@ -9,10 +9,46 @@ export const STEP_UP_PREFIX = 'step_up:';
 export const STEP_UP_TTL = 30 * 60; // 30 minutes in seconds
 
 /**
- * POST /api/v1/auth/step-up
- * Re-authenticates the current user by verifying their password.
- * On success, grants a 30-minute step-up window stored in Redis.
- * Admin actions use requireStepUp middleware to verify this window.
+ * @openapi
+ * /auth/step-up:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Re-authenticate for admin actions (step-up)
+ *     description: >
+ *       Verifies the user’s password and grants a 30-minute step-up window required by all
+ *       admin endpoints. Must be called before any `POST /admin/...` action is attempted.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 example: Str0ng!Passw0rd#
+ *     responses:
+ *       200:
+ *         description: Step-up granted for 30 minutes.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         description: Password is missing.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         description: Authentication failed (wrong password or inactive account).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
  */
 export async function stepUpHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const userId = req.user?.sub ?? '';

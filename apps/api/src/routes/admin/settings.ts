@@ -11,6 +11,69 @@ import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 
+/**
+ * @openapi
+ * /admin/settings:
+ *   get:
+ *     tags: [Admin · Settings]
+ *     summary: List all system settings
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of settings.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 settings:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/SystemSetting'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *
+ * /admin/settings/{key}:
+ *   patch:
+ *     tags: [Admin · Settings]
+ *     summary: Update a system setting (super_admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: key
+ *         in: path
+ *         required: true
+ *         description: Setting key (e.g. `registration_enabled`).
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [value]
+ *             properties:
+ *               value: { type: string }
+ *     responses:
+ *       200:
+ *         description: Setting updated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SystemSetting'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 // ── GET /api/v1/admin/settings ────────────────────────────────────────────────
 
 export async function listSettingsHandler(

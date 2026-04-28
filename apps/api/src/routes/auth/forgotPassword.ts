@@ -10,6 +10,42 @@ import { getNumSetting } from '../../lib/settings';
 
 const GENERIC_RESPONSE = { message: 'If that email is registered you will receive a reset link shortly.' };
 
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Password]
+ *     summary: Request a password reset email
+ *     description: >
+ *       Always returns 200 to prevent email enumeration.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: alice@example.com
+ *     responses:
+ *       200:
+ *         description: Request processed (email sent if applicable).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       429:
+ *         description: Rate limit exceeded.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function forgotPasswordHandler(
   req: Request<Record<string, never>, unknown, ForgotPasswordInput>,
   res: Response,

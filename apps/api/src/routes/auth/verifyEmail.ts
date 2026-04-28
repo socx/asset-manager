@@ -4,6 +4,35 @@ import { prisma } from '@asset-manager/db';
 import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 
+/**
+ * @openapi
+ * /auth/verify-email:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Verify email address
+ *     description: Consumes the one-time token emailed after registration.
+ *     parameters:
+ *       - name: token
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: a3f9c2d7e1b4...
+ *         description: SHA-256 pre-image token from the verification email.
+ *     responses:
+ *       200:
+ *         description: Email verified (or already verified).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         description: Token missing, invalid, or expired.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function verifyEmailHandler(req: Request, res: Response): Promise<void> {
   const token = req.query['token'];
 

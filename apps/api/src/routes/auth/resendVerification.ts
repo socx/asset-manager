@@ -9,6 +9,42 @@ import { logger } from '../../lib/logger';
 
 const GENERIC_OK = { message: 'If your email is registered and unverified, a new verification email has been sent.' };
 
+/**
+ * @openapi
+ * /auth/resend-verification:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Resend verification email
+ *     description: >
+ *       Always returns 200 regardless of whether the email was found to prevent enumeration.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: alice@example.com
+ *     responses:
+ *       200:
+ *         description: Request processed (email sent if applicable).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       429:
+ *         description: Rate limit exceeded.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function resendVerificationHandler(
   req: Request<Record<string, never>, unknown, ResendVerificationInput>,
   res: Response,

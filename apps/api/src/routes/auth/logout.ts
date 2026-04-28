@@ -6,6 +6,23 @@ import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 
+/**
+ * @openapi
+ * /auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Logout and revoke current session
+ *     description: Revokes the current session refresh token and clears the cookie.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function logoutHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const rawToken = req.cookies[REFRESH_COOKIE_NAME] as string | undefined;
 

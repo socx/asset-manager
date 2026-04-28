@@ -9,6 +9,65 @@ import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 import { getBoolSetting, getNumSetting } from '../../lib/settings';
 
+/**
+ * @openapi
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new user account
+ *     description: >
+ *       Creates a new user in `pending_verification` status and sends a verification email.
+ *       Requires `SELF_REGISTRATION_ENABLED` system setting to be `true`.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, firstName, lastName]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: alice@example.com
+ *               password:
+ *                 type: string
+ *                 minLength: 12
+ *                 example: Str0ng!Passw0rd#
+ *               firstName:
+ *                 type: string
+ *                 example: Alice
+ *               lastName:
+ *                 type: string
+ *                 example: Smith
+ *     responses:
+ *       201:
+ *         description: Account created. Verification email queued.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Registration successful. Please check your email to verify your account.
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       403:
+ *         description: Self-registration is disabled.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       409:
+ *         $ref: '#/components/responses/Conflict'
+ *       429:
+ *         description: Rate limit exceeded.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
 export async function registerHandler(
   req: Request<Record<string, never>, unknown, RegisterInput>,
   res: Response,

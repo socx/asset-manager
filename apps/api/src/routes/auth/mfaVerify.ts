@@ -16,6 +16,56 @@ import { logger } from '../../lib/logger';
 const MFA_CHALLENGE_TTL = 5 * 60; // seconds
 export const MFA_CHALLENGE_PREFIX = 'mfa_challenge:';
 
+/**
+ * @openapi
+ * /auth/mfa/verify:
+ *   post:
+ *     tags: [MFA]
+ *     summary: Complete MFA login challenge
+ *     description: >
+ *       Submit either a TOTP code or a backup code along with the `sessionChallenge`
+ *       returned by `POST /auth/login` when MFA is required.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionChallenge]
+ *             properties:
+ *               sessionChallenge:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Value returned by POST /auth/login when mfaRequired is true.
+ *               totpCode:
+ *                 type: string
+ *                 example: '123456'
+ *                 description: 6-digit TOTP code. Provide either this or backupCode.
+ *               backupCode:
+ *                 type: string
+ *                 example: A3F9C2D7E1
+ *                 description: One-time backup code. Provide either this or totpCode.
+ *     responses:
+ *       200:
+ *         description: MFA verified; access token returned.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Missing or invalid fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ *       401:
+ *         description: Invalid TOTP/backup code or expired challenge.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Message'
+ */
+
 // ── POST /auth/mfa/verify ─────────────────────────────────────────────────────
 // Called after login returns { mfaRequired: true, sessionChallenge }.
 // Body: { sessionChallenge, totpCode } OR { sessionChallenge, backupCode }

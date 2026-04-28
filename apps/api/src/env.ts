@@ -20,6 +20,7 @@ const envSchema = z.object({
   SEED_SUPER_ADMIN_EMAIL: z.string().email().optional(),
   SEED_SUPER_ADMIN_PASSWORD: z.string().optional(),
   SELF_REGISTRATION_ENABLED: z.coerce.boolean().default(true),
+  TOTP_ISSUER: z.string().default('Asset Manager'),
 });
 
 const parsed = envSchema.safeParse(process.env);

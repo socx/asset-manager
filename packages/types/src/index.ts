@@ -55,6 +55,24 @@ export const resendVerificationSchema = z.object({
   email: z.string().email(),
 });
 
+// ── MFA schemas (ITER-1-012) ───────────────────────────────────────────────────
+
+export const mfaConfirmSchema = z.object({
+  totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be numeric'),
+});
+
+export const mfaDisableSchema = z.object({
+  totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be numeric'),
+});
+
+export const mfaVerifySchema = z.object({
+  sessionChallenge: z.string().min(1),
+  totpCode: z.string().length(6).regex(/^\d{6}$/).optional(),
+  backupCode: z.string().min(1).optional(),
+}).refine((data) => data.totpCode ?? data.backupCode, {
+  message: 'Either totpCode or backupCode is required',
+});
+
 // ── Inferred types ─────────────────────────────────────────────────────────────
 
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -62,3 +80,6 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
+export type MfaConfirmInput = z.infer<typeof mfaConfirmSchema>;
+export type MfaDisableInput = z.infer<typeof mfaDisableSchema>;
+export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;

@@ -116,3 +116,48 @@ export function resetPassword(payload: ResetPasswordPayload): Promise<{ message:
     body: JSON.stringify(payload),
   });
 }
+
+// ── MFA (ITER-1-012) ──────────────────────────────────────────────────────────
+
+export interface MfaSetupResponse {
+  secret: string;
+  qrCodeDataUrl: string;
+  backupCodes: string[];
+}
+
+export function mfaSetup(): Promise<MfaSetupResponse> {
+  return request<MfaSetupResponse>('/auth/mfa/setup', {
+    method: 'POST',
+    credentials: 'include',
+  });
+}
+
+export function mfaConfirm(totpCode: string): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/mfa/confirm', {
+    method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify({ totpCode }),
+  });
+}
+
+export function mfaDisable(totpCode: string): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/mfa/disable', {
+    method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify({ totpCode }),
+  });
+}
+
+export interface MfaVerifyPayload {
+  sessionChallenge: string;
+  totpCode?: string;
+  backupCode?: string;
+}
+
+export function mfaVerify(payload: MfaVerifyPayload): Promise<LoginResponse> {
+  return request<LoginResponse>('/auth/mfa/verify', {
+    method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+}

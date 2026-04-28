@@ -21,6 +21,13 @@ jest.mock('../../../lib/audit', () => ({ createAuditLog: jest.fn().mockResolvedV
 jest.mock('../../../lib/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
+jest.mock('../../../lib/redis', () => ({
+  redis: {
+    set: jest.fn().mockResolvedValue('OK'),
+    get: jest.fn().mockResolvedValue(null),
+    del: jest.fn().mockResolvedValue(1),
+  },
+}));
 
 // Mock jwt so signAccessToken returns a predictable value
 jest.mock('../../../lib/jwt', () => ({

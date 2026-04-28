@@ -6,6 +6,8 @@ import ResendVerificationPage from './pages/ResendVerificationPage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import MfaChallengePage from './pages/MfaChallengePage';
+import MfaSetupPage from './pages/MfaSetupPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +27,8 @@ export default function App() {
           <Route path="/resend-verification" element={<ResendVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/mfa-challenge" element={<MfaChallengePage />} />
+          <Route path="/mfa/setup" element={<MfaSetupPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

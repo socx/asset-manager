@@ -1,7 +1,21 @@
 import { Router } from 'express';
-import { registerSchema, resendVerificationSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '@asset-manager/types';
+import {
+  registerSchema,
+  resendVerificationSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  mfaConfirmSchema,
+  mfaDisableSchema,
+  mfaVerifySchema,
+} from '@asset-manager/types';
 import { validate } from '../../middleware/validate';
-import { registrationLimiter, resendVerificationLimiter, authLimiter, forgotPasswordLimiter } from '../../middleware/rateLimiter';
+import {
+  registrationLimiter,
+  resendVerificationLimiter,
+  authLimiter,
+  forgotPasswordLimiter,
+} from '../../middleware/rateLimiter';
 import { requireAuth } from '../../middleware/requireAuth';
 import { registerHandler } from './register';
 import { verifyEmailHandler } from './verifyEmail';
@@ -11,6 +25,8 @@ import { refreshHandler, listSessionsHandler, revokeSessionHandler, revokeAllSes
 import { logoutHandler } from './logout';
 import { forgotPasswordHandler } from './forgotPassword';
 import { resetPasswordHandler } from './resetPassword';
+import { mfaSetupHandler, mfaConfirmHandler, mfaDisableHandler } from './mfa';
+import { mfaVerifyHandler } from './mfaVerify';
 
 export const authRouter = Router();
 
@@ -52,4 +68,14 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswo
 // POST /api/v1/auth/reset-password  (ITER-1-011)
 authRouter.post('/reset-password', validate(resetPasswordSchema), resetPasswordHandler);
 
-// Additional auth routes added in ITER-1-012
+// POST /api/v1/auth/mfa/setup    (ITER-1-012)
+authRouter.post('/mfa/setup', requireAuth, mfaSetupHandler);
+
+// POST /api/v1/auth/mfa/confirm  (ITER-1-012)
+authRouter.post('/mfa/confirm', requireAuth, validate(mfaConfirmSchema), mfaConfirmHandler);
+
+// POST /api/v1/auth/mfa/disable  (ITER-1-012)
+authRouter.post('/mfa/disable', requireAuth, validate(mfaDisableSchema), mfaDisableHandler);
+
+// POST /api/v1/auth/mfa/verify   (ITER-1-012) — public, challenge proves identity
+authRouter.post('/mfa/verify', authLimiter, validate(mfaVerifySchema), mfaVerifyHandler);

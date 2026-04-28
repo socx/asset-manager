@@ -11,6 +11,8 @@ import {
 } from '../../lib/jwt';
 import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
+import { redis } from '../../lib/redis';
+import { MFA_CHALLENGE_PREFIX, MFA_CHALLENGE_TTL } from './mfaVerify';
 
 const INVALID_CREDENTIALS = { message: 'Invalid credentials.' };
 const MAX_FAILED_ATTEMPTS = 5;
@@ -110,8 +112,18 @@ export async function loginHandler(
 
   // ── 5. MFA gate ──────────────────────────────────────────────────────────
   if (user.mfaEnabled) {
-    // MFA challenge issued — full login completes in ITER-1-012
     const sessionChallenge = crypto.randomBytes(32).toString('hex');
+    await redis.set(
+      `${MFA_CHALLENGE_PREFIX}${sessionChallenge}`,
+      JSON.stringify({ userId: user.id }),
+      'EX',
+      MFA_CHALLENGE_TTL,
+    );
+    // Reset failed attempts now that password was correct
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    });
     res.status(200).json({ mfaRequired: true, sessionChallenge });
     return;
   }

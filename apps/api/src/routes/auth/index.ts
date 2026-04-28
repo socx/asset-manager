@@ -1,10 +1,14 @@
 import { Router } from 'express';
-import { registerSchema, resendVerificationSchema } from '@asset-manager/types';
+import { registerSchema, resendVerificationSchema, loginSchema } from '@asset-manager/types';
 import { validate } from '../../middleware/validate';
-import { registrationLimiter, resendVerificationLimiter } from '../../middleware/rateLimiter';
+import { registrationLimiter, resendVerificationLimiter, authLimiter } from '../../middleware/rateLimiter';
+import { requireAuth } from '../../middleware/requireAuth';
 import { registerHandler } from './register';
 import { verifyEmailHandler } from './verifyEmail';
 import { resendVerificationHandler } from './resendVerification';
+import { loginHandler } from './login';
+import { refreshHandler, listSessionsHandler, revokeSessionHandler, revokeAllSessionsHandler } from './sessions';
+import { logoutHandler } from './logout';
 
 export const authRouter = Router();
 
@@ -22,4 +26,22 @@ authRouter.post(
   resendVerificationHandler,
 );
 
-// Additional auth routes added in ITER-1-008 through ITER-1-012
+// POST /api/v1/auth/login  (ITER-1-008)
+authRouter.post('/login', authLimiter, validate(loginSchema), loginHandler);
+
+// POST /api/v1/auth/refresh  (ITER-1-009)
+authRouter.post('/refresh', refreshHandler);
+
+// GET    /api/v1/auth/sessions  (ITER-1-009)
+authRouter.get('/sessions', requireAuth, listSessionsHandler);
+
+// DELETE /api/v1/auth/sessions/:sessionId  (ITER-1-009)
+authRouter.delete('/sessions/:sessionId', requireAuth, revokeSessionHandler);
+
+// DELETE /api/v1/auth/sessions  (ITER-1-009)
+authRouter.delete('/sessions', requireAuth, revokeAllSessionsHandler);
+
+// POST /api/v1/auth/logout  (ITER-1-010)
+authRouter.post('/logout', requireAuth, logoutHandler);
+
+// Additional auth routes added in ITER-1-011 through ITER-1-012

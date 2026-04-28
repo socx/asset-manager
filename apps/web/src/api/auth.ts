@@ -49,3 +49,43 @@ export function register(payload: RegisterPayload): Promise<RegisterResponse> {
     body: JSON.stringify(payload),
   });
 }
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+}
+
+export interface MfaRequiredResponse {
+  mfaRequired: true;
+  sessionChallenge: string;
+}
+
+export function login(payload: LoginPayload): Promise<LoginResponse | MfaRequiredResponse> {
+  return request<LoginResponse | MfaRequiredResponse>('/auth/login', {
+    method: 'POST',
+    credentials: 'include', // send/receive HttpOnly cookies
+    body: JSON.stringify(payload),
+  });
+}
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+
+export function logout(): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/logout', {
+    method: 'POST',
+    credentials: 'include',
+  });
+}

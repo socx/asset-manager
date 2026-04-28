@@ -1,6 +1,7 @@
 import express, { type Application, type Request, type Response, type NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { env } from './env';
 import { logger } from './lib/logger';
 import { healthHandler } from './routes/health';
@@ -26,6 +27,9 @@ export function createApp(): Application {
   // Body size limits (prevent large payload attacks)
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+  // Parse cookies (needed for HttpOnly refresh token)
+  app.use(cookieParser());
 
   // Health check — no auth required, not versioned
   app.get('/health', healthHandler);

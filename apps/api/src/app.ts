@@ -1,7 +1,8 @@
-import express, { type Application } from 'express';
+import express, { type Application, type Request, type Response, type NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { env } from './env';
+import { logger } from './lib/logger';
 import { healthHandler } from './routes/health';
 import { router } from './routes';
 
@@ -31,6 +32,12 @@ export function createApp(): Application {
 
   // API v1 routes
   app.use('/api/v1', router);
+
+  // Global error handler — must be defined last
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    logger.error('[api] Unhandled error', { message: err.message, stack: err.stack });
+    res.status(500).json({ message: 'An unexpected error occurred. Please try again later.' });
+  });
 
   return app;
 }

@@ -7,6 +7,35 @@ import { getTraceId } from './traceContext';
 
 const SERVICE = 'api';
 
+// ── Secrets scrubbing ─────────────────────────────────────────────────────────
+
+const SENSITIVE_KEYS = new Set([
+  'password', 'passwordHash', 'token', 'accessToken', 'refreshToken',
+  'secret', 'mfa_secret', 'mfaSecret', 'backupCodes', 'totpCode', 'backupCode',
+]);
+
+function scrubObject(value: unknown, depth = 0): unknown {
+  if (depth > 6 || value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map((v) => scrubObject(v, depth + 1));
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    result[k] = SENSITIVE_KEYS.has(k) ? '[REDACTED]' : scrubObject(v, depth + 1);
+  }
+  return result;
+}
+
+/** Winston format that redacts sensitive fields at any depth in log metadata. */
+const scrubSecrets = winston.format((info) => {
+  for (const key of Object.keys(info)) {
+    if (SENSITIVE_KEYS.has(key)) {
+      (info as Record<string, unknown>)[key] = '[REDACTED]';
+    } else if (!['level', 'message', 'service', 'traceId', 'timestamp', Symbol.for('level')].includes(key as string)) {
+      (info as Record<string, unknown>)[key] = scrubObject((info as Record<string, unknown>)[key]);
+    }
+  }
+  return info;
+});
+
 // ── Custom levels (adds `fatal` above `error`) ────────────────────────────────
 
 const CUSTOM_LEVELS = {
@@ -69,6 +98,7 @@ const jsonFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
   injectFields(),
+  scrubSecrets(),
   winston.format.json(),
 );
 
@@ -76,6 +106,7 @@ const devFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
   injectFields(),
+  scrubSecrets(),
   winston.format.colorize({ all: true }),
   winston.format.printf(({ timestamp, level, message, traceId, ...meta }) => {
     const trace = traceId ? ` [${String(traceId).slice(0, 8)}]` : '';

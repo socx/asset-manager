@@ -1,8 +1,25 @@
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import type { RedisReply } from 'rate-limit-redis';
+import { redis } from '../lib/redis';
 import { env } from '../env';
 
 // Rate limiting is disabled in the test environment to keep tests fast and deterministic.
 const skip = () => env.NODE_ENV === 'test';
+
+/**
+ * Returns a RedisStore instance for the given key prefix.
+ * Returns undefined in test mode so the default in-memory store is used,
+ * avoiding unnecessary Redis connections in unit tests.
+ */
+function makeStore(prefix: string): RedisStore | undefined {
+  if (env.NODE_ENV === 'test') return undefined;
+  return new RedisStore({
+    sendCommand: (command: string, ...args: string[]) =>
+      redis.call(command, ...args) as Promise<RedisReply>,
+    prefix,
+  });
+}
 
 /** 5 registration attempts per IP per hour */
 export const registrationLimiter = rateLimit({
@@ -11,6 +28,7 @@ export const registrationLimiter = rateLimit({
   message: { message: 'Too many registration attempts from this IP. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('rl:register:'),
   skip,
 });
 
@@ -21,6 +39,7 @@ export const resendVerificationLimiter = rateLimit({
   message: { message: 'Too many resend requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('rl:resend:'),
   skip,
 });
 
@@ -31,6 +50,7 @@ export const authLimiter = rateLimit({
   message: { message: 'Too many requests from this IP. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('rl:auth:'),
   skip,
 });
 
@@ -41,5 +61,6 @@ export const forgotPasswordLimiter = rateLimit({
   message: { message: 'Too many password reset requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('rl:forgot:'),
   skip,
 });

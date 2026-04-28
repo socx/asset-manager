@@ -21,6 +21,9 @@ const envSchema = z.object({
   SEED_SUPER_ADMIN_PASSWORD: z.string().optional(),
   SELF_REGISTRATION_ENABLED: z.coerce.boolean().default(true),
   TOTP_ISSUER: z.string().default('Asset Manager'),
+  // Comma-separated list of allowed CORS origins.
+  // If omitted, falls back to APP_BASE_URL.
+  ALLOWED_ORIGINS: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

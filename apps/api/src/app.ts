@@ -19,10 +19,20 @@ export function createApp(): Application {
   // Security headers
   app.use(helmet());
 
-  // CORS — only allow the configured frontend origin
+  // CORS — allow whitelisted origins (ALLOWED_ORIGINS env var, comma-separated)
+  const allowedOrigins = env.ALLOWED_ORIGINS
+    ? env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : [env.APP_BASE_URL];
   app.use(
     cors({
-      origin: env.APP_BASE_URL,
+      origin: (origin, callback) => {
+        // Allow server-to-server requests (no Origin header) and whitelisted origins
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
     }),
   );

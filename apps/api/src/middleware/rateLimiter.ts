@@ -14,6 +14,16 @@ export const registrationLimiter = rateLimit({
   skip,
 });
 
+/** 3 resend-verification requests per email per hour (keyed by IP) */
+export const resendVerificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1_000,
+  max: 3,
+  message: { message: 'Too many resend requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip,
+});
+
 /** Generic auth limiter — 10 attempts per IP per 15 minutes (login, resend, etc.) */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1_000,

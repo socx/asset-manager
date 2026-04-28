@@ -36,7 +36,7 @@ export default function AdminPage() {
             title="User Management"
             description="Create, edit, enable, disable, and delete users. Manage roles and sessions."
             href="/admin/users"
-            available={false}
+            available={true}
           />
           <AdminCard
             title="Audit Logs"

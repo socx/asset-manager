@@ -129,10 +129,10 @@ export async function loginHandler(
   }
 
   // ── 6. Issue tokens ───────────────────────────────────────────────────────
-  // Reset failed attempts on successful login
+  // Reset failed attempts and record last login timestamp
   await prisma.user.update({
     where: { id: user.id },
-    data: { failedLoginAttempts: 0, lockedUntil: null },
+    data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
   });
 
   const accessToken = signAccessToken({

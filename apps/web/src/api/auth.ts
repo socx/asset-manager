@@ -2,6 +2,7 @@ const API_BASE = '/api/v1';
 
 interface ApiError {
   message: string;
+  code?: string;
   errors?: Record<string, string[]>;
 }
 
@@ -9,6 +10,7 @@ export class ApiResponseError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code?: string,
     public readonly errors?: Record<string, string[]>,
   ) {
     super(message);
@@ -16,7 +18,7 @@ export class ApiResponseError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit): Promise<T> {
+export async function apiRequest<T>(path: string, init: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { 'Content-Type': 'application/json', ...init.headers },
     ...init,
@@ -26,7 +28,7 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const err = data as ApiError;
-    throw new ApiResponseError(err.message ?? 'Request failed', res.status, err.errors);
+    throw new ApiResponseError(err.message ?? 'Request failed', res.status, err.code, err.errors);
   }
 
   return data as T;
@@ -44,7 +46,7 @@ export interface RegisterResponse {
 }
 
 export function register(payload: RegisterPayload): Promise<RegisterResponse> {
-  return request<RegisterResponse>('/auth/register', {
+  return apiRequest<RegisterResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -74,7 +76,7 @@ export interface MfaRequiredResponse {
 }
 
 export function login(payload: LoginPayload): Promise<LoginResponse | MfaRequiredResponse> {
-  return request<LoginResponse | MfaRequiredResponse>('/auth/login', {
+  return apiRequest<LoginResponse | MfaRequiredResponse>('/auth/login', {
     method: 'POST',
     credentials: 'include', // send/receive HttpOnly cookies
     body: JSON.stringify(payload),
@@ -84,7 +86,7 @@ export function login(payload: LoginPayload): Promise<LoginResponse | MfaRequire
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 export function logout(): Promise<{ message: string }> {
-  return request<{ message: string }>('/auth/logout', {
+  return apiRequest<{ message: string }>('/auth/logout', {
     method: 'POST',
     credentials: 'include',
   });
@@ -97,7 +99,7 @@ export interface ForgotPasswordPayload {
 }
 
 export function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
-  return request<{ message: string }>('/auth/forgot-password', {
+  return apiRequest<{ message: string }>('/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -111,7 +113,7 @@ export interface ResetPasswordPayload {
 }
 
 export function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
-  return request<{ message: string }>('/auth/reset-password', {
+  return apiRequest<{ message: string }>('/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -126,14 +128,14 @@ export interface MfaSetupResponse {
 }
 
 export function mfaSetup(): Promise<MfaSetupResponse> {
-  return request<MfaSetupResponse>('/auth/mfa/setup', {
+  return apiRequest<MfaSetupResponse>('/auth/mfa/setup', {
     method: 'POST',
     credentials: 'include',
   });
 }
 
 export function mfaConfirm(totpCode: string): Promise<{ message: string }> {
-  return request<{ message: string }>('/auth/mfa/confirm', {
+  return apiRequest<{ message: string }>('/auth/mfa/confirm', {
     method: 'POST',
     credentials: 'include',
     body: JSON.stringify({ totpCode }),
@@ -141,7 +143,7 @@ export function mfaConfirm(totpCode: string): Promise<{ message: string }> {
 }
 
 export function mfaDisable(totpCode: string): Promise<{ message: string }> {
-  return request<{ message: string }>('/auth/mfa/disable', {
+  return apiRequest<{ message: string }>('/auth/mfa/disable', {
     method: 'POST',
     credentials: 'include',
     body: JSON.stringify({ totpCode }),
@@ -155,9 +157,19 @@ export interface MfaVerifyPayload {
 }
 
 export function mfaVerify(payload: MfaVerifyPayload): Promise<LoginResponse> {
-  return request<LoginResponse>('/auth/mfa/verify', {
+  return apiRequest<LoginResponse>('/auth/mfa/verify', {
     method: 'POST',
     credentials: 'include',
     body: JSON.stringify(payload),
+  });
+}
+
+// ── Step-up auth (ITER-1-014) ─────────────────────────────────────────────────
+
+export function stepUp(password: string, accessToken: string): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>('/auth/step-up', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ password }),
   });
 }

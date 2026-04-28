@@ -27,6 +27,7 @@ import { forgotPasswordHandler } from './forgotPassword';
 import { resetPasswordHandler } from './resetPassword';
 import { mfaSetupHandler, mfaConfirmHandler, mfaDisableHandler } from './mfa';
 import { mfaVerifyHandler } from './mfaVerify';
+import { stepUpHandler } from './stepUp';
 
 export const authRouter = Router();
 
@@ -79,3 +80,6 @@ authRouter.post('/mfa/disable', requireAuth, validate(mfaDisableSchema), mfaDisa
 
 // POST /api/v1/auth/mfa/verify   (ITER-1-012) — public, challenge proves identity
 authRouter.post('/mfa/verify', authLimiter, validate(mfaVerifySchema), mfaVerifyHandler);
+
+// POST /api/v1/auth/step-up  (ITER-1-014) — re-authenticate for admin actions
+authRouter.post('/step-up', requireAuth, stepUpHandler);

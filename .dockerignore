@@ -1,0 +1,42 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies (will be reinstalled inside the image)
+node_modules
+**/node_modules
+
+# Build outputs (rebuilt inside the image)
+**/dist
+apps/api/coverage
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+**/*.log
+
+# Dev/test tooling
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+**/jest.config.*
+**/jest.setup.*
+**/.eslintrc*
+**/.prettierrc*
+**/nodemon.json
+**/vitest.config.*
+
+# Documentation and IDE
+docs
+.vscode
+.idea
+*.md
+!apps/api/src/**/*.md
+
+# Web app (not needed for API image)
+apps/web
+apps/worker

@@ -1,0 +1,112 @@
+name: Deploy (Dev)
+
+# Triggers only after the CI workflow completes successfully on main
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Build · Push · Deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: dev
+
+    permissions:
+      contents: read
+      packages: write    # push to GHCR
+      statuses: write    # post commit status
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/asset-manager-api
+      SHA:   ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # ── Docker build & push ──────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.SHA }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Database migrations ──────────────────────────────────────────────────
+      # Run prisma migrate deploy from the CI runner directly against the remote DB.
+      # Requires DEV_DATABASE_URL secret (connection string for the dev Postgres instance).
+      - name: Run Prisma migrations
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+        run: |
+          npm ci
+          npm run db:generate
+          npm run db:migrate
+
+      # ── Deploy to dev server ─────────────────────────────────────────────────
+      # Requires:
+      #   DEV_HOST        — hostname / IP of the dev server
+      #   DEV_SSH_USER    — SSH username (e.g. deploy)
+      #   DEV_SSH_KEY     — PEM-encoded private SSH key
+      # The server is expected to have Docker installed and an env file at
+      # /etc/asset-manager/.env with all runtime secrets.
+      - name: Deploy to dev server
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_SSH_USER }}
+          key:      ${{ secrets.DEV_SSH_KEY }}
+          script: |
+            set -e
+            echo "${{ secrets.GITHUB_TOKEN }}" | \
+              docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker pull ${{ env.IMAGE }}:${{ env.SHA }}
+
+            docker stop  asset-manager-api 2>/dev/null || true
+            docker rm    asset-manager-api 2>/dev/null || true
+
+            docker run -d \
+              --name    asset-manager-api \
+              --restart unless-stopped \
+              --env-file /etc/asset-manager/.env \
+              -p 3001:3000 \
+              -v /var/log/asset-manager:/app/logs \
+              ${{ env.IMAGE }}:${{ env.SHA }}
+
+      # ── Post commit deployment status ────────────────────────────────────────
+      - name: Post deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner:       context.repo.owner,
+              repo:        context.repo.repo,
+              sha:         '${{ env.SHA }}',
+              state,
+              context:     'deploy/dev',
+              description: state === 'success' ? 'Deployed to dev' : 'Dev deployment failed',
+              target_url:  `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

@@ -5,3 +5,6 @@ process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/asset_manag
 process.env['JWT_ACCESS_SECRET'] = 'test_jwt_secret_that_is_at_least_32_characters_long';
 process.env['REDIS_URL'] = 'redis://localhost:6379';
 process.env['SELF_REGISTRATION_ENABLED'] = 'true';
+// Per-worker port assignment — prevents port collisions when jest runs parallel workers
+const workerId = Number(process.env['JEST_WORKER_ID'] ?? 1);
+process.env['API_PORT'] = String(3000 + workerId);

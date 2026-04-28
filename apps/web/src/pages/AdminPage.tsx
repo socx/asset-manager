@@ -42,7 +42,7 @@ export default function AdminPage() {
             title="Audit Logs"
             description="Browse the complete audit trail of all system events."
             href="/admin/audit-logs"
-            available={false}
+            available={true}
           />
           <AdminCard
             title="System Logs"

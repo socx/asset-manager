@@ -15,6 +15,7 @@ import {
   revokeUserSessionHandler,
 } from './users';
 import { listSettingsHandler, updateSettingHandler } from './settings';
+import { listAuditLogsHandler } from './auditLogs';
 
 export const adminRouter = Router();
 
@@ -43,3 +44,6 @@ adminRouter.delete('/users/:id/sessions/:sessionId', revokeUserSessionHandler);
 // System settings
 adminRouter.get('/settings', listSettingsHandler);
 adminRouter.patch('/settings/:key', requireRole(Role.SUPER_ADMIN), updateSettingHandler);
+
+// Audit logs
+adminRouter.get('/audit-logs', listAuditLogsHandler);

@@ -176,3 +176,52 @@ export function updateSetting(
     accessToken,
   );
 }
+
+// ── Audit Logs ────────────────────────────────────────────────────────────────
+
+export interface AuditLog {
+  id: string;
+  actorId: string | null;
+  actorRole: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  oldValue: unknown;
+  newValue: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export interface ListAuditLogsParams {
+  actorId?: string;
+  action?: string;
+  entityType?: string;
+  entityId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface ListAuditLogsResponse {
+  logs: AuditLog[];
+  nextCursor: string | null;
+}
+
+export function listAuditLogs(
+  params: ListAuditLogsParams,
+  accessToken: string,
+): Promise<ListAuditLogsResponse> {
+  const qs = new URLSearchParams();
+  if (params.actorId) qs.set('actorId', params.actorId);
+  if (params.action) qs.set('action', params.action);
+  if (params.entityType) qs.set('entityType', params.entityType);
+  if (params.entityId) qs.set('entityId', params.entityId);
+  if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+  if (params.dateTo) qs.set('dateTo', params.dateTo);
+  if (params.cursor) qs.set('cursor', params.cursor);
+  if (params.limit) qs.set('limit', String(params.limit));
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return adminReq<ListAuditLogsResponse>(`/audit-logs${query}`, { method: 'GET' }, accessToken);
+}

@@ -60,8 +60,12 @@ COPY --from=builder /app/packages/db/dist    ./packages/db/dist
 COPY --from=builder /app/apps/api/dist       ./apps/api/dist
 
 # Copy generated Prisma client and schema (needed for the query engine)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY packages/db/prisma ./packages/db/prisma
+COPY --from=builder /app/node_modules/.prisma          ./node_modules/.prisma
+COPY packages/db/prisma                               ./packages/db/prisma
+
+# Copy Prisma CLI and schema engine so migrations can be run from this image
+COPY --from=builder /app/node_modules/prisma          ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma/engines  ./node_modules/@prisma/engines
 
 # Create an unprivileged user and a writable log directory
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \

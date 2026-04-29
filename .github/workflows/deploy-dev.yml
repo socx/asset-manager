@@ -52,22 +52,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── Database migrations ──────────────────────────────────────────────────
-      # Run prisma migrate deploy from the CI runner directly against the remote DB.
-      # Requires DEV_DATABASE_URL secret (connection string for the dev Postgres instance).
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma client
-        env:
-          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-        run: npx prisma generate --schema=packages/db/prisma/schema.prisma
-
-      - name: Run Prisma migrations
-        env:
-          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
-        run: npx prisma migrate deploy --schema=packages/db/prisma/schema.prisma
-
       # ── Deploy to dev server ─────────────────────────────────────────────────
       # Requires:
       #   DEV_HOST        — hostname / IP of the dev server
@@ -87,6 +71,13 @@ jobs:
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker pull ${{ env.IMAGE }}:${{ env.SHA }}
+
+            # Run database migrations using the new image and the server's env file
+            docker run --rm \
+              --env-file /etc/asset-manager/.env \
+              ${{ env.IMAGE }}:${{ env.SHA }} \
+              node node_modules/prisma/build/index.js migrate deploy \
+                --schema=packages/db/prisma/schema.prisma
 
             docker stop  asset-manager-api 2>/dev/null || true
             docker rm    asset-manager-api 2>/dev/null || true

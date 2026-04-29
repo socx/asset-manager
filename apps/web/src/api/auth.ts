@@ -20,8 +20,8 @@ export class ApiResponseError extends Error {
 
 export async function apiRequest<T>(path: string, init: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init.headers },
     ...init,
+    headers: { 'Content-Type': 'application/json', ...init.headers },
   });
 
   const data = (await res.json()) as T | ApiError;

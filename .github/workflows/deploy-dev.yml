@@ -60,6 +60,7 @@ jobs:
       # The server is expected to have Docker installed and an env file at
       # /etc/asset-manager/.env with all runtime secrets.
       - name: Deploy to dev server
+        if: ${{ secrets.DEV_HOST != '' }}
         uses: appleboy/ssh-action@v1
         with:
           host:     ${{ secrets.DEV_HOST }}

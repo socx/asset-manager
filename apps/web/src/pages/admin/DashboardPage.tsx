@@ -61,21 +61,21 @@ export default function DashboardPage() {
 
   const { data: activeUsers, isLoading: loadingStats } = useQuery({
     queryKey: ['dashboard', 'active-users'],
-    queryFn: () => getActiveUsers(accessToken!),
+    queryFn: () => getActiveUsers(accessToken ?? ''),
     enabled: !!accessToken,
     refetchInterval: REFETCH_INTERVAL,
   });
 
   const { data: pageActivity, isLoading: loadingPages } = useQuery({
     queryKey: ['dashboard', 'page-activity'],
-    queryFn: () => getPageActivity(accessToken!),
+    queryFn: () => getPageActivity(accessToken ?? ''),
     enabled: !!accessToken,
     refetchInterval: REFETCH_INTERVAL,
   });
 
   const { data: health } = useQuery({
     queryKey: ['dashboard', 'health'],
-    queryFn: () => getDashboardHealth(accessToken!),
+    queryFn: () => getDashboardHealth(accessToken ?? ''),
     enabled: !!accessToken,
     refetchInterval: REFETCH_INTERVAL,
   });

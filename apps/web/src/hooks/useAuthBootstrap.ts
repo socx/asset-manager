@@ -31,8 +31,7 @@ export function useAuthBootstrap(): { ready: boolean } {
       .then((res) => setAuth(res.user, res.accessToken))
       .catch(() => clearAuth())
       .finally(() => setReady(true));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run once on mount only
+  }, []); // intentionally run once on mount only
 
   return { ready };
 }

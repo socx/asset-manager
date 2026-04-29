@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { ApiResponseError } from '../../api/auth';
 import StepUpModal from '../../components/StepUpModal';
@@ -198,18 +197,8 @@ export default function AuditLogsPage() {
   }, [data?.nextCursor]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link to="/admin" className="text-sm text-indigo-600 hover:underline">
-            ← Admin
-          </Link>
-          <span className="text-gray-400">/</span>
-          <h1 className="text-lg font-semibold text-gray-900">Audit Logs</h1>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-6">
+    <>
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Filter bar */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
@@ -356,8 +345,8 @@ export default function AuditLogsPage() {
             </button>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -73,6 +73,18 @@ export const mfaVerifySchema = z.object({
   message: 'Either totpCode or backupCode is required',
 });
 
+// ── Profile schemas (ITER-2-006) ──────────────────────────────────────────────
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: passwordSchema,
+}).refine((d) => d.currentPassword !== d.newPassword, {
+  message: 'New password must differ from current password',
+  path: ['newPassword'],
+});
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
 // ── Admin user schemas (ITER-1-014) ───────────────────────────────────────────
 
 const roleEnum = z.enum(['super_admin', 'system_admin', 'asset_manager', 'asset_owner']);

@@ -17,6 +17,7 @@ import {
 import { listSettingsHandler, updateSettingHandler } from './settings';
 import { listAuditLogsHandler } from './auditLogs';
 import { listSystemLogsHandler } from './systemLogs';
+import { activeUsersHandler, pageActivityHandler, healthHandler } from './dashboard';
 
 export const adminRouter = Router();
 
@@ -51,3 +52,8 @@ adminRouter.get('/audit-logs', listAuditLogsHandler);
 
 // System logs
 adminRouter.get('/system-logs', listSystemLogsHandler);
+
+// Dashboard (ITER-2-007/008/009)
+adminRouter.get('/dashboard/active-users',  activeUsersHandler);
+adminRouter.get('/dashboard/page-activity', pageActivityHandler);
+adminRouter.get('/dashboard/health',        healthHandler);

@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { ApiResponseError } from '../../api/auth';
 import {
@@ -397,20 +396,8 @@ export default function UsersPage() {
   const isSuperAdmin = currentUser?.role === 'super_admin';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-sm">
-          <Link to="/admin" className="text-gray-400 hover:text-gray-600">Admin</Link>
-          <span className="text-gray-300">/</span>
-          <span className="font-medium text-gray-900">User Management</span>
-        </div>
-        <div className="text-sm text-gray-500">
-          {currentUser?.firstName} {currentUser?.lastName}
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <>
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           <button
@@ -563,7 +550,7 @@ export default function UsersPage() {
         {data?.nextCursor && (
           <p className="mt-3 text-xs text-gray-400 text-center">Showing first 50 results. Use filters to narrow down.</p>
         )}
-      </main>
+      </div>
 
       {/* Modals */}
       {(showCreate || editingUser) && (
@@ -606,6 +593,6 @@ export default function UsersPage() {
       {stepUpVisible && (
         <StepUpModal onSuccess={onStepUpSuccess} onCancel={onStepUpCancel} />
       )}
-    </div>
+    </>
   );
 }

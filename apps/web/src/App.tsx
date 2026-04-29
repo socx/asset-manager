@@ -8,12 +8,15 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import MfaChallengePage from './pages/MfaChallengePage';
 import MfaSetupPage from './pages/MfaSetupPage';
-import AdminPage from './pages/AdminPage';
+import HomePage from './pages/HomePage';
+import ProfilePage from './pages/ProfilePage';
+import DashboardPage from './pages/admin/DashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import AuditLogsPage from './pages/admin/AuditLogsPage';
 import SystemLogsPage from './pages/admin/SystemLogsPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppShell from './components/AppShell';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,7 +45,9 @@ export default function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <HomePage />
+                <AppShell title="Dashboard">
+                  <HomePage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -54,13 +59,25 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <AppShell title="My Profile">
+                  <ProfilePage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Admin-only routes (ITER-1-013) */}
+          {/* Admin-only routes */}
           <Route
             path="/admin"
             element={
               <ProtectedRoute roles={ADMIN_ROLES}>
-                <AdminPage />
+                <AppShell title="Dashboard">
+                  <DashboardPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -68,7 +85,9 @@ export default function App() {
             path="/admin/users"
             element={
               <ProtectedRoute roles={ADMIN_ROLES}>
-                <UsersPage />
+                <AppShell title="User Management">
+                  <UsersPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -76,7 +95,9 @@ export default function App() {
             path="/admin/settings"
             element={
               <ProtectedRoute roles={['super_admin']}>
-                <SettingsPage />
+                <AppShell title="System Settings">
+                  <SettingsPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -84,7 +105,9 @@ export default function App() {
             path="/admin/audit-logs"
             element={
               <ProtectedRoute roles={ADMIN_ROLES}>
-                <AuditLogsPage />
+                <AppShell title="Audit Logs">
+                  <AuditLogsPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -92,23 +115,14 @@ export default function App() {
             path="/admin/system-logs"
             element={
               <ProtectedRoute roles={ADMIN_ROLES}>
-                <SystemLogsPage />
+                <AppShell title="System Logs">
+                  <SystemLogsPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
-  );
-}
-
-function HomePage() {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Asset Manager</h1>
-        <p className="mt-2 text-gray-500">Iteration 1 scaffold — ready for development.</p>
-      </div>
-    </div>
   );
 }

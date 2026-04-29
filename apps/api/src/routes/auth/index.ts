@@ -8,6 +8,7 @@ import {
   mfaConfirmSchema,
   mfaDisableSchema,
   mfaVerifySchema,
+  changePasswordSchema,
 } from '@asset-manager/types';
 import { validate } from '../../middleware/validate';
 import {
@@ -28,6 +29,7 @@ import { resetPasswordHandler } from './resetPassword';
 import { mfaSetupHandler, mfaConfirmHandler, mfaDisableHandler } from './mfa';
 import { mfaVerifyHandler } from './mfaVerify';
 import { stepUpHandler } from './stepUp';
+import { changePasswordHandler } from './profile';
 
 export const authRouter = Router();
 
@@ -83,3 +85,6 @@ authRouter.post('/mfa/verify', authLimiter, validate(mfaVerifySchema), mfaVerify
 
 // POST /api/v1/auth/step-up  (ITER-1-014) — re-authenticate for admin actions
 authRouter.post('/step-up', requireAuth, stepUpHandler);
+
+// PATCH /api/v1/auth/profile/password  (ITER-2-006) — change own password
+authRouter.patch('/profile/password', requireAuth, validate(changePasswordSchema), changePasswordHandler);

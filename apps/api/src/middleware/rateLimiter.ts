@@ -64,3 +64,14 @@ export const forgotPasswordLimiter = rateLimit({
   store: makeStore('rl:forgot:'),
   skip,
 });
+
+/** 120 telemetry page-view events per session per minute (fire-and-forget nav tracking) */
+export const telemetryLimiter = rateLimit({
+  windowMs: 60 * 1_000,
+  max: 120,
+  message: { message: 'Too many telemetry requests.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: makeStore('rl:telemetry:'),
+  skip,
+});

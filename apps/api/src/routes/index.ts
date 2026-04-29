@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authRouter } from './auth';
 import { adminRouter } from './admin';
+import { telemetryRouter } from './telemetry';
 
 export const router = Router();
 
@@ -9,3 +10,6 @@ router.use('/auth', authRouter);
 
 // Admin routes (ITER-1-014+)
 router.use('/admin', adminRouter);
+
+// Telemetry (ITER-2-008) — no auth required
+router.use('/telemetry', telemetryRouter);

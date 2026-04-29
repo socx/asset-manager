@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { ApiResponseError } from '../../api/auth';
 import { listSettings, updateSetting, type SystemSetting } from '../../api/admin';
@@ -162,18 +161,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link to="/admin" className="text-sm text-indigo-600 hover:underline">
-            ← Admin
-          </Link>
-          <span className="text-gray-400">/</span>
-          <h1 className="text-lg font-semibold text-gray-900">System Settings</h1>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-8">
+    <>
+      <div className="max-w-5xl mx-auto px-4 py-8">
         {errorMsg && (
           <div className="mb-4 rounded bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
             {errorMsg}
@@ -216,11 +205,11 @@ export default function SettingsPage() {
         {successKey && (
           <p className="mt-3 text-sm text-green-600">✓ {successKey} updated successfully.</p>
         )}
-      </main>
+      </div>
 
       {stepUpVisible && (
         <StepUpModal onSuccess={onStepUpSuccess} onCancel={onStepUpCancel} />
       )}
-    </div>
+    </>
   );
 }

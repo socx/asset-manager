@@ -173,3 +173,16 @@ export function stepUp(password: string, accessToken: string): Promise<{ message
     body: JSON.stringify({ password }),
   });
 }
+
+// ── Profile (ITER-2-006) ──────────────────────────────────────────────────────
+
+export function changePassword(
+  payload: { currentPassword: string; newPassword: string },
+  accessToken: string,
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>('/auth/profile/password', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+}

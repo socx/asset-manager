@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loginSchema } from '@asset-manager/types';
 import type { LoginInput } from '@asset-manager/types';
@@ -12,9 +12,17 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const currentUser = useAuthStore((s) => s.user);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+
+  // Redirect already-authenticated users to their default page
+  useEffect(() => {
+    if (currentUser) {
+      navigate(getDefaultRedirect(currentUser.role), { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   // If ProtectedRoute sent us here with a `from` location, go back there after login.
   const from = (location.state as { from?: { pathname: string } } | null)?.from;
@@ -114,9 +122,14 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <Link to="/forgot-password" className="text-xs text-sky-600 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
@@ -139,12 +152,6 @@ export default function LoginPage() {
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
-        <p className="mt-4 text-center text-sm text-gray-500">
-          <Link to="/resend-verification" className="text-sky-600 hover:underline">
-            Didn&apos;t receive a verification email?
-          </Link>
-        </p>
       </div>
     </div>
   );

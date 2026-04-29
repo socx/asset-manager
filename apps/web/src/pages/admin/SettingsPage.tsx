@@ -116,7 +116,6 @@ export default function SettingsPage() {
       setPendingFn(() => () => void refetch());
       setStepUpVisible(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
   const mutation = useMutation({

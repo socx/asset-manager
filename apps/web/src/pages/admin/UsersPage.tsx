@@ -326,7 +326,6 @@ export default function UsersPage() {
     if (error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') {
       withStepUp(() => void refetch())(error);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
   const invalidateUsers = useCallback(

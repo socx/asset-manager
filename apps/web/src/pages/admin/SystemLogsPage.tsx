@@ -132,7 +132,6 @@ export default function SystemLogsPage() {
       setPendingFn(() => () => void refetch());
       setStepUpVisible(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
   function onStepUpSuccess() {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -315,10 +315,19 @@ export default function UsersPage() {
   const { stepUpVisible, withStepUp, onStepUpSuccess, onStepUpCancel } = useWithStepUp();
 
   // Users query
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'users', { search, role: roleFilter, status: statusFilter }],
     queryFn: () => listUsers({ search: search || undefined, role: roleFilter || undefined, status: statusFilter || undefined, limit: 50 }, accessToken),
+    retry: (_, err) => !(err instanceof ApiResponseError && err.code === 'STEP_UP_REQUIRED'),
   });
+
+  // Trigger step-up modal when the initial load is blocked by missing step-up
+  useEffect(() => {
+    if (error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') {
+      withStepUp(() => void refetch())(error);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   const invalidateUsers = useCallback(
     () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),

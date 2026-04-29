@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { ApiResponseError } from '../../api/auth';
+import StepUpModal from '../../components/StepUpModal';
 import {
   listSystemLogs,
   type SystemLog,
@@ -115,11 +117,34 @@ export default function SystemLogsPage() {
     limit: 50,
   };
 
-  const { data, isFetching, error } = useQuery({
+  const [stepUpVisible, setStepUpVisible] = useState(false);
+  const [pendingFn, setPendingFn] = useState<(() => void) | null>(null);
+
+  const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['admin', 'system-logs', applied, cursor],
     queryFn: () => listSystemLogs(params, accessToken ?? ''),
     enabled: !!accessToken,
+    retry: (_, err) => !(err instanceof ApiResponseError && err.code === 'STEP_UP_REQUIRED'),
   });
+
+  useEffect(() => {
+    if (error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') {
+      setPendingFn(() => () => void refetch());
+      setStepUpVisible(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
+
+  function onStepUpSuccess() {
+    setStepUpVisible(false);
+    pendingFn?.();
+    setPendingFn(null);
+  }
+
+  function onStepUpCancel() {
+    setStepUpVisible(false);
+    setPendingFn(null);
+  }
 
   // Merge pages into allLogs
   if (data && data.logs.length > 0 && data.logs[0].id !== lastDataId) {
@@ -250,7 +275,7 @@ export default function SystemLogsPage() {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-          {error && (
+          {error && !(error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') && (
             <p className="text-center py-10 text-red-500 text-sm">Failed to load system logs.</p>
           )}
 
@@ -323,6 +348,10 @@ export default function SystemLogsPage() {
 
       {/* Log detail drawer */}
       {selected && <LogDetail log={selected} onClose={() => setSelected(null)} />}
+
+      {stepUpVisible && (
+        <StepUpModal onSuccess={onStepUpSuccess} onCancel={onStepUpCancel} />
+      )}
     </div>
   );
 }

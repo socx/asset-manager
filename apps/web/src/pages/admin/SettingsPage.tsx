@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -104,11 +104,20 @@ export default function SettingsPage() {
   const [successKey, setSuccessKey] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin', 'settings'],
     queryFn: () => listSettings(accessToken ?? ''),
     enabled: !!accessToken,
+    retry: (_, err) => !(err instanceof ApiResponseError && err.code === 'STEP_UP_REQUIRED'),
   });
+
+  useEffect(() => {
+    if (error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') {
+      setPendingFn(() => () => void refetch());
+      setStepUpVisible(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   const mutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: string }) =>

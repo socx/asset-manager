@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { ApiResponseError } from '../../api/auth';
+import StepUpModal from '../../components/StepUpModal';
 import {
   listAuditLogs,
   type AuditLog,
@@ -126,11 +128,34 @@ export default function AuditLogsPage() {
     limit: 50,
   };
 
-  const { data, isFetching, error } = useQuery({
+  const [stepUpVisible, setStepUpVisible] = useState(false);
+  const [pendingFn, setPendingFn] = useState<(() => void) | null>(null);
+
+  const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['admin', 'audit-logs', applied, cursor],
     queryFn: () => listAuditLogs(params, accessToken ?? ''),
     enabled: !!accessToken,
+    retry: (_, err) => !(err instanceof ApiResponseError && err.code === 'STEP_UP_REQUIRED'),
   });
+
+  useEffect(() => {
+    if (error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') {
+      setPendingFn(() => () => void refetch());
+      setStepUpVisible(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
+
+  function onStepUpSuccess() {
+    setStepUpVisible(false);
+    pendingFn?.();
+    setPendingFn(null);
+  }
+
+  function onStepUpCancel() {
+    setStepUpVisible(false);
+    setPendingFn(null);
+  }
 
   // Append new page results to allLogs
   const prevQueryKey = JSON.stringify([applied, cursor]);
@@ -265,9 +290,13 @@ export default function AuditLogsPage() {
           )}
         </div>
 
+        {stepUpVisible && (
+          <StepUpModal onSuccess={onStepUpSuccess} onCancel={onStepUpCancel} />
+        )}
+
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-          {error && (
+          {error && !(error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') && (
             <p className="text-center py-10 text-red-500 text-sm">Failed to load audit logs.</p>
           )}
 

@@ -65,10 +65,12 @@ jobs:
         run: npm install
 
       - name: Generate Prisma client
-        run: npm run db:generate
+        run: npx prisma generate
+        working-directory: packages/db
 
       - name: Run database migrations
-        run: npm run db:migrate
+        run: npx prisma migrate deploy
+        working-directory: packages/db
 
       - name: Type-check
         run: npm run type-check

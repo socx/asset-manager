@@ -1,6 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { refresh } from '../api/auth';
+import { refresh, type LoginResponse } from '../api/auth';
+
+/**
+ * Module-level singleton: ensures only one /auth/refresh call is ever in-flight
+ * regardless of how many times React mounts this hook (e.g. StrictMode double-
+ * invocation). Both concurrent effects share the same Promise so the token is
+ * only rotated once.
+ */
+let pendingRefresh: Promise<LoginResponse> | null = null;
+
+function getOrStartRefresh(): Promise<LoginResponse> {
+  if (!pendingRefresh) {
+    pendingRefresh = refresh().finally(() => {
+      pendingRefresh = null;
+    });
+  }
+  return pendingRefresh;
+}
 
 /**
  * On page load: if the Zustand store has a persisted user but no access token
@@ -26,8 +43,8 @@ export function useAuthBootstrap(): { ready: boolean } {
       return;
     }
 
-    // User persisted but token gone — try the refresh cookie.
-    refresh()
+    // User persisted but token gone — silently re-hydrate from the HttpOnly cookie.
+    getOrStartRefresh()
       .then((res) => setAuth(res.user, res.accessToken))
       .catch(() => clearAuth())
       .finally(() => setReady(true));

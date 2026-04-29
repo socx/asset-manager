@@ -20,8 +20,9 @@ jobs:
       statuses: write    # post commit status
 
     env:
-      IMAGE: ghcr.io/${{ github.repository_owner }}/asset-manager-api
-      SHA:   ${{ github.event.workflow_run.head_sha }}
+      IMAGE:    ghcr.io/${{ github.repository_owner }}/asset-manager-api
+      SHA:      ${{ github.event.workflow_run.head_sha }}
+      DEV_HOST: ${{ secrets.DEV_HOST }}
 
     steps:
       - name: Checkout
@@ -60,7 +61,7 @@ jobs:
       # The server is expected to have Docker installed and an env file at
       # /etc/asset-manager/.env with all runtime secrets.
       - name: Deploy to dev server
-        if: ${{ secrets.DEV_HOST != '' }}
+        if: ${{ env.DEV_HOST != '' }}
         uses: appleboy/ssh-action@v1
         with:
           host:     ${{ secrets.DEV_HOST }}

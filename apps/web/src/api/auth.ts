@@ -83,6 +83,15 @@ export function login(payload: LoginPayload): Promise<LoginResponse | MfaRequire
   });
 }
 
+// ── Refresh ───────────────────────────────────────────────────────────────────
+
+export function refresh(): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>('/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+  });
+}
+
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 export function logout(): Promise<{ message: string }> {

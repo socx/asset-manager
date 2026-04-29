@@ -60,8 +60,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
         run: |
           npm ci
-          npm run db:generate
-          npm run db:migrate
+          npx prisma generate --schema=packages/db/prisma/schema.prisma
+          npx prisma migrate deploy --schema=packages/db/prisma/schema.prisma
 
       # ── Deploy to dev server ─────────────────────────────────────────────────
       # Requires:

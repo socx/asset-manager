@@ -112,7 +112,7 @@ export async function refreshHandler(req: Request, res: Response): Promise<void>
   const session = await prisma.userSession.findFirst({
     where: { refreshTokenHash: tokenHash },
     include: {
-      user: { select: { id: true, email: true, role: true, status: true } },
+      user: { select: { id: true, email: true, firstName: true, lastName: true, role: true, status: true } },
     },
   });
 
@@ -174,7 +174,16 @@ export async function refreshHandler(req: Request, res: Response): Promise<void>
   });
 
   res.cookie(REFRESH_COOKIE_NAME, newRawToken, REFRESH_COOKIE_OPTIONS);
-  res.status(200).json({ accessToken });
+  res.status(200).json({
+    accessToken,
+    user: {
+      id: session.user.id,
+      email: session.user.email,
+      firstName: session.user.firstName,
+      lastName: session.user.lastName,
+      role: session.user.role,
+    },
+  });
 }
 
 // ── List sessions (GET /auth/sessions) ───────────────────────────────────────

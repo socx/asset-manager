@@ -2,7 +2,16 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../../middleware/requireAuth';
 import { requireStepUp } from '../../middleware/requireStepUp';
 import { validate } from '../../middleware/validate';
-import { Role, createUserSchema, updateUserSchema, setUserStatusSchema } from '@asset-manager/types';
+import {
+  Role,
+  createUserSchema,
+  updateUserSchema,
+  setUserStatusSchema,
+  createLookupItemSchema,
+  updateLookupItemSchema,
+  createCompanySchema,
+  updateCompanySchema,
+} from '@asset-manager/types';
 import {
   listUsersHandler,
   getUserHandler,
@@ -18,6 +27,19 @@ import { listSettingsHandler, updateSettingHandler } from './settings';
 import { listAuditLogsHandler } from './auditLogs';
 import { listSystemLogsHandler } from './systemLogs';
 import { activeUsersHandler, pageActivityHandler, healthHandler } from './dashboard';
+import {
+  listLookupItemsHandler,
+  createLookupItemHandler,
+  updateLookupItemHandler,
+  deleteLookupItemHandler,
+} from './lookupItems';
+import {
+  listCompaniesAdminHandler,
+  getCompanyHandler,
+  createCompanyHandler,
+  updateCompanyHandler,
+  deleteCompanyHandler,
+} from './companies';
 
 export const adminRouter = Router();
 
@@ -57,3 +79,16 @@ adminRouter.get('/system-logs', listSystemLogsHandler);
 adminRouter.get('/dashboard/active-users',  activeUsersHandler);
 adminRouter.get('/dashboard/page-activity', pageActivityHandler);
 adminRouter.get('/dashboard/health',        healthHandler);
+
+// Lookup items (ITER-3-002)
+adminRouter.get('/lookup/:type', listLookupItemsHandler);
+adminRouter.post('/lookup/:type', validate(createLookupItemSchema), createLookupItemHandler);
+adminRouter.patch('/lookup-items/:id', validate(updateLookupItemSchema), updateLookupItemHandler);
+adminRouter.delete('/lookup-items/:id', deleteLookupItemHandler);
+
+// Companies (ITER-3-003)
+adminRouter.get('/companies', listCompaniesAdminHandler);
+adminRouter.post('/companies', validate(createCompanySchema), createCompanyHandler);
+adminRouter.get('/companies/:id', getCompanyHandler);
+adminRouter.patch('/companies/:id', validate(updateCompanySchema), updateCompanyHandler);
+adminRouter.delete('/companies/:id', deleteCompanyHandler);

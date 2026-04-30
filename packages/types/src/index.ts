@@ -123,3 +123,66 @@ export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type SetUserStatusInput = z.infer<typeof setUserStatusSchema>;
+
+// ── Lookup Item schemas (ITER-3-002) ──────────────────────────────────────────
+
+export const LOOKUP_ITEM_TYPES = [
+  'document_type',
+  'asset_class',
+  'transaction_category',
+  'company_type',
+  'property_status',
+  'property_purpose',
+  'ownership_type',
+  'mortgage_type',
+  'mortgage_payment_status',
+] as const;
+export type LookupItemType = (typeof LOOKUP_ITEM_TYPES)[number];
+
+export const createLookupItemSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(255).optional(),
+  sortOrder: z.number().int().positive().optional(),
+});
+
+export const updateLookupItemSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(255).nullable().optional(),
+  sortOrder: z.number().int().positive().optional(),
+  isActive: z.boolean().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export type CreateLookupItemInput = z.infer<typeof createLookupItemSchema>;
+export type UpdateLookupItemInput = z.infer<typeof updateLookupItemSchema>;
+
+// ── Company schemas (ITER-3-003) ──────────────────────────────────────────────
+
+export const createCompanySchema = z.object({
+  name: z.string().min(1).max(200),
+  companyTypeId: z.string().uuid().nullable().optional(),
+  addressLine1: z.string().max(200).optional(),
+  addressLine2: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  county: z.string().max(100).optional(),
+  postCode: z.string().max(20).optional(),
+  country: z.string().max(100).optional(),
+});
+
+export const updateCompanySchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  companyTypeId: z.string().uuid().nullable().optional(),
+  addressLine1: z.string().max(200).nullable().optional(),
+  addressLine2: z.string().max(200).nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
+  county: z.string().max(100).nullable().optional(),
+  postCode: z.string().max(20).nullable().optional(),
+  country: z.string().max(100).nullable().optional(),
+  isActive: z.boolean().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
+export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;

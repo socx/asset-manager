@@ -1,7 +1,71 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, LookupItemType } from '@prisma/client';
 import { hash } from 'argon2';
 
 const prisma = new PrismaClient();
+
+// ── Lookup seed data ──────────────────────────────────────────────────────────
+
+type LookupSeed = { type: LookupItemType; name: string; description?: string };
+
+const LOOKUP_SEEDS: LookupSeed[] = [
+  // Document Type
+  { type: 'document_type', name: 'Valuation' },
+  { type: 'document_type', name: 'Invoice / Receipt' },
+  { type: 'document_type', name: 'Insurance' },
+  { type: 'document_type', name: 'Mortgage Document' },
+  { type: 'document_type', name: 'Tenancy Agreement' },
+  { type: 'document_type', name: 'Title Deed' },
+  { type: 'document_type', name: 'Legal' },
+  { type: 'document_type', name: 'Compliance' },
+  { type: 'document_type', name: 'Government Correspondence' },
+  { type: 'document_type', name: 'Quotation' },
+  { type: 'document_type', name: 'Other' },
+  // Asset Class
+  { type: 'asset_class', name: 'Property' },
+  { type: 'asset_class', name: 'Stocks & ETFs' },
+  // Transaction Category
+  { type: 'transaction_category', name: 'Rent' },
+  { type: 'transaction_category', name: 'Administration' },
+  { type: 'transaction_category', name: 'Insurance' },
+  { type: 'transaction_category', name: 'Repairs' },
+  { type: 'transaction_category', name: 'Mortgage' },
+  { type: 'transaction_category', name: 'Legal Fees' },
+  { type: 'transaction_category', name: 'Duties & Taxes' },
+  { type: 'transaction_category', name: 'Other' },
+  // Company Type
+  { type: 'company_type', name: 'Fund Manager' },
+  { type: 'company_type', name: 'Estate Manager' },
+  { type: 'company_type', name: 'Supplier' },
+  { type: 'company_type', name: 'Lender' },
+  // Property Status
+  { type: 'property_status', name: 'Rented' },
+  { type: 'property_status', name: 'Vacant' },
+  { type: 'property_status', name: 'Resident' },
+  { type: 'property_status', name: 'Unknown' },
+  // Property Purpose
+  { type: 'property_purpose', name: 'Rental' },
+  { type: 'property_purpose', name: 'Commercial' },
+  { type: 'property_purpose', name: 'Primary Residence' },
+  { type: 'property_purpose', name: 'Non-Primary Residence' },
+  { type: 'property_purpose', name: 'Other' },
+  // Ownership Type
+  { type: 'ownership_type', name: 'Personal' },
+  { type: 'ownership_type', name: 'Limited Company' },
+  { type: 'ownership_type', name: 'Other' },
+  // Mortgage Type
+  { type: 'mortgage_type', name: 'Interest Only' },
+  { type: 'mortgage_type', name: 'Capital Repayment' },
+  { type: 'mortgage_type', name: 'Other' },
+  // Mortgage Payment Status
+  { type: 'mortgage_payment_status', name: 'Up to Date' },
+  { type: 'mortgage_payment_status', name: 'In Arrears' },
+  { type: 'mortgage_payment_status', name: 'Arrangement to Pay' },
+  { type: 'mortgage_payment_status', name: 'Default' },
+  { type: 'mortgage_payment_status', name: 'Settled' },
+  { type: 'mortgage_payment_status', name: 'Satisfied' },
+  { type: 'mortgage_payment_status', name: 'Partially Settled' },
+  { type: 'mortgage_payment_status', name: 'Unknown' },
+];
 
 async function main() {
   const email = process.env.SEED_SUPER_ADMIN_EMAIL;
@@ -69,8 +133,22 @@ async function main() {
   }
 
   console.log(`✓ System settings seeded (${defaultSettings.length} entries)`);
-}
 
+  // Lookup items — idempotent: upsert by (type, name), assign sort order by position within type
+  const byType = new Map<string, number>();
+  let seeded = 0;
+  for (const seed of LOOKUP_SEEDS) {
+    const sortOrder = (byType.get(seed.type) ?? 0) + 1;
+    byType.set(seed.type, sortOrder);
+    await prisma.lookupItem.upsert({
+      where: { type_name: { type: seed.type, name: seed.name } },
+      create: { type: seed.type, name: seed.name, description: seed.description ?? null, sortOrder },
+      update: {},
+    });
+    seeded++;
+  }
+  console.log(`✓ Lookup items seeded (${seeded} entries across ${byType.size} types)`);
+}
 main()
   .catch((e) => {
     console.error(e);

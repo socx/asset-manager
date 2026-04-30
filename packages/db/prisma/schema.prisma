@@ -35,6 +35,18 @@ enum LogLevel {
   fatal
 }
 
+enum LookupItemType {
+  document_type
+  asset_class
+  transaction_category
+  company_type
+  property_status
+  property_purpose
+  ownership_type
+  mortgage_type
+  mortgage_payment_status
+}
+
 // ── Models ─────────────────────────────────────────────────────────────────────
 
 /// NOTE: Primary keys use gen_random_uuid() (UUID v4) for now.
@@ -172,4 +184,43 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+/// Single polymorphic table for all admin-managed lookup / reference lists.
+model LookupItem {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type        LookupItemType
+  name        String
+  description String?
+  sortOrder   Int            @map("sort_order")
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  companies   Company[]
+
+  @@unique([type, name])
+  @@index([type, isActive, sortOrder])
+  @@map("lookup_items")
+}
+
+model Company {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String      @unique
+  companyTypeId String?     @map("company_type_id") @db.Uuid
+  addressLine1  String?     @map("address_line1")
+  addressLine2  String?     @map("address_line2")
+  city          String?
+  county        String?
+  postCode      String?     @map("post_code")
+  country       String?
+  isActive      Boolean     @default(true) @map("is_active")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  deletedAt     DateTime?   @map("deleted_at")
+
+  companyType   LookupItem? @relation(fields: [companyTypeId], references: [id], onDelete: SetNull)
+
+  @@index([isActive])
+  @@map("companies")
 }

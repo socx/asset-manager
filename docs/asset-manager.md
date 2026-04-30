@@ -907,17 +907,636 @@ system_settings
 
 | Story | Title | Status |
 |---|---|---|
-| ITER-2-001 | Application Shell — Sidebar + Header Layout | ⬜ |
-| ITER-2-002 | Dark Mode Theme Switcher | ⬜ |
-| ITER-2-003 | Admin Navigation Structure | ⬜ |
-| ITER-2-004 | App (Non-Admin) Navigation Structure | ⬜ |
-| ITER-2-005 | User Profile Menu & Sign Out | ⬜ |
-| ITER-2-006 | User Profile Page | ⬜ |
-| ITER-2-007 | Admin Dashboard — Live User Activity Stats | ⬜ |
-| ITER-2-008 | Admin Dashboard — Top Pages & Per-URL Activity | ⬜ |
-| ITER-2-009 | Admin Dashboard — Service Health Status | ⬜ |
-| ITER-2-010 | Database Schema Changes — Iteration 2 | ⬜ |
-| ITER-2-011 | CI Updates — Iteration 2 | ⬜ |
+| ITER-2-001 | Application Shell — Sidebar + Header Layout | ✅ |
+| ITER-2-002 | Dark Mode Theme Switcher | ✅ |
+| ITER-2-003 | Admin Navigation Structure | ✅ |
+| ITER-2-004 | App (Non-Admin) Navigation Structure | ✅ |
+| ITER-2-005 | User Profile Menu & Sign Out | ✅ |
+| ITER-2-006 | User Profile Page | ✅ |
+| ITER-2-007 | Admin Dashboard — Live User Activity Stats | ✅ |
+| ITER-2-008 | Admin Dashboard — Top Pages & Per-URL Activity | ✅ |
+| ITER-2-009 | Admin Dashboard — Service Health Status | ✅ |
+| ITER-2-010 | Database Schema Changes — Iteration 2 | ✅ |
+| ITER-2-011 | CI Updates — Iteration 2 | ✅ |
+
+---
+
+## 10. Epic: ITER-3 — Settings & Reference Data Management {#epic-3}
+
+**Epic ID:** ITER-3
+**Epic Title:** Settings & Reference Data Management
+**Goal:** Deliver structured admin settings where all system-wide lookup lists (Document Types, Asset Classes, Transaction Categories, Mortgage Types, etc.) and the Company registry can be managed. These are the foundational building blocks that ITER-4, ITER-5, and ITER-6 all depend on.
+**Target Delivery:** 14 May 2026
+**Definition of Done:** All lookup types manageable via the admin UI; Company CRUD complete; API endpoints for dropdowns working; CI green; no regressions on ITER-2.
+
+---
+
+## 11. User Stories — Iteration 3 {#user-stories-3}
+
+---
+
+### ITER-3-001 · Settings Area — Navigation & Layout
+
+**As a** system_admin or super_admin
+**I want** a dedicated Settings area in the admin panel with clear sub-sections
+**So that** I can navigate to and manage all reference data from one place
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** High · **Target:** 6 May 2026
+
+**Acceptance Criteria:**
+- [ ] The existing `/admin/settings` page is restructured into tabbed or sectioned sub-pages
+- [ ] Sub-sections: **Lookup Lists**, **Companies**
+- [ ] Navigation sidebar "Settings" group links to these sub-sections
+- [ ] All settings pages are restricted to `system_admin` and `super_admin` roles (existing guard)
+- [ ] Pages render correctly in dark mode
+
+---
+
+### ITER-3-002 · Lookup List Management
+
+**As a** system_admin or super_admin
+**I want** to create, view, edit, and deactivate lookup list entries for all system-defined types
+**So that** other features in the system have consistent, admin-controlled reference values
+
+**Size:** L · **Estimate:** 1–2 weeks · **Priority:** High · **Target:** 12 May 2026
+
+**Managed lookup types:**
+
+| Lookup Type | Seed values |
+|---|---|
+| Document Type | Valuation, Invoice / Receipt, Insurance, Mortgage Document, Tenancy Agreement, Title Deed, Legal, Compliance, Government Correspondence, Quotation, Other |
+| Asset Class | Property, Stocks & ETFs |
+| Transaction Category | Rent, Administration, Insurance, Repairs, Mortgage, Legal Fees, Duties & Taxes, Other |
+| Company Type | Fund Manager, Estate Manager, Supplier, Lender |
+| Property Status | Rented, Vacant, Resident, Unknown |
+| Property Purpose | Rental, Commercial, Primary Residence, Non-Primary Residence, Other |
+| Ownership Type | Personal, Limited Company, Other |
+| Mortgage Type | Interest Only, Capital Repayment, Other |
+| Mortgage Payment Status | Up to Date, In Arrears, Arrangement to Pay, Default, Settled, Satisfied, Partially Settled, Unknown |
+
+**Acceptance Criteria:**
+- [ ] Each lookup type has a list view showing: name, description (optional), sort order, active/inactive status
+- [ ] Admins can add a new entry (name required, description optional, sort order defaults to appending)
+- [ ] Admins can edit name, description, and sort order of any entry
+- [ ] Admins can **deactivate** (soft-disable) an entry — it is hidden in dropdowns for new records but existing records referencing it are unaffected
+- [ ] Admins cannot hard-delete entries referenced by existing records; a clear error is shown
+- [ ] Seed values populated via database seed script
+- [ ] All lookup lists available via `GET /api/v1/lookup/:type` (authenticated, any role) returning `[{ id, name, description, sortOrder }]` ordered by `sortOrder`
+
+> **Design note:** A single `lookup_items` table with a `type` enum column is preferred over one table per list — CRUD logic and API endpoint are generic, and adding new lookup types requires only a migration to add an enum value.
+
+---
+
+### ITER-3-003 · Company Management
+
+**As a** system_admin or super_admin
+**I want** to manage a list of companies in the system
+**So that** users and assets can be associated with known companies
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 12 May 2026
+
+**Company fields:** Name (required, unique), Company Type (from lookup), Address Line 1, Address Line 2, City, County / State, Post Code, Country, Active/Inactive status, Created At, Updated At.
+
+**Acceptance Criteria:**
+- [ ] `/admin/settings/companies` page lists all companies (paginated, searchable by name)
+- [ ] Admins can create, edit, and soft-delete companies
+- [ ] A company referenced by a user profile or an asset cannot be hard-deleted; soft-delete (deactivate) only, with a clear explanation
+- [ ] Company list available via `GET /api/v1/companies` (authenticated, any role) for use in dropdowns
+- [ ] Company typeahead search: `GET /api/v1/companies?q=<search>`
+
+---
+
+### ITER-3-004 · Database Schema — Iteration 3
+
+**As a** developer
+**I want** all Iteration 3 database tables created via Prisma migrations
+**So that** schema changes are version-controlled and reproducible
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 8 May 2026
+
+**Acceptance Criteria:**
+- [ ] New Prisma model: `LookupItem { id, type (enum), name, description?, sortOrder, isActive, createdAt, updatedAt }` — single table, polymorphic via `type` enum
+- [ ] New Prisma model: `Company { id, name, companyTypeId (FK → LookupItem), addressLine1, addressLine2?, city, county?, postCode, country, isActive, createdAt, updatedAt, deletedAt? }`
+- [ ] All seed data for lookup tables added to `packages/db/seed.ts`
+- [ ] `db:migrate` and `db:seed` scripts pass cleanly
+- [ ] Prisma client regenerated and types updated
+
+---
+
+### ITER-3-005 · CI Updates — Iteration 3
+
+**As a** developer
+**I want** the CI pipeline to validate all Iteration 3 changes
+**So that** regressions are caught automatically before merge
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** Medium · **Target:** 14 May 2026
+
+**Acceptance Criteria:**
+- [ ] API tests added for: `GET /api/v1/lookup/:type`, all lookup item CRUD endpoints, all Company CRUD endpoints
+- [ ] TypeScript type-check passes with no errors
+- [ ] Test count does not decrease from Iteration 2 baseline
+
+---
+
+## Iteration 3 Delivery Checklist
+
+| Story | Title | Size | Priority | Target | Status |
+|---|---|---|---|---|---|
+| ITER-3-001 | Settings Area — Navigation & Layout | S | High | 6 May 2026 | ⬜ |
+| ITER-3-002 | Lookup List Management | L | High | 12 May 2026 | ⬜ |
+| ITER-3-003 | Company Management | M | High | 12 May 2026 | ⬜ |
+| ITER-3-004 | Database Schema — Iteration 3 | M | High | 8 May 2026 | ⬜ |
+| ITER-3-005 | CI Updates — Iteration 3 | S | Medium | 14 May 2026 | ⬜ |
+
+---
+
+## 12. Epic: ITER-4 — Asset Register: Property {#epic-4}
+
+**Epic ID:** ITER-4
+**Epic Title:** Asset Register — Property Assets
+**Goal:** Deliver a fully functional asset register for property assets, including a multi-step registration wizard, all sub-entity management (valuation, mortgage, shareholding, transactions), a full detail page, and search / dual-view listing.
+**Target Delivery:** 28 May 2026
+**Definition of Done:** Asset owners and managers can register and manage property assets end-to-end; access controls enforced; dual-view listing working; CI green; no regressions on ITER-3.
+
+---
+
+## 13. User Stories — Iteration 4 {#user-stories-4}
+
+---
+
+### ITER-4-001 · Asset Register Navigation & Listing Page
+
+**As an** authenticated user
+**I want** to see a listing of assets I have access to
+**So that** I can navigate to and manage my portfolio at a glance
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 19 May 2026
+
+**Acceptance Criteria:**
+- [ ] Navigation sidebar gains an "Assets" item (→ `/assets`) visible to all authenticated roles
+- [ ] Listing page displays assets in **two switchable views**: table and tile (toggle persisted to `localStorage`)
+- [ ] **Table view** columns: Property Code, Address (single line), Type, Status, Current Valuation, Owner, Manager
+- [ ] **Tile view**: card per asset showing Property Code, address, property purpose, status, current valuation
+- [ ] Clicking a row or tile navigates to the asset detail page (`/assets/:id`)
+- [ ] Search bar filters by property code, address fields, owner name
+- [ ] "Register New Asset" button → opens the registration wizard
+- [ ] `asset_owner` / `asset_manager` see only their own assets (owned or managed); admins see all
+- [ ] Empty state with a prompt to register the first asset
+
+---
+
+### ITER-4-002 · Property Asset API (CRUD + Access Control)
+
+**As a** developer
+**I want** a fully spec'd REST API for property assets and all sub-entities
+**So that** the frontend has a reliable, secure data contract
+
+**Size:** XL · **Estimate:** 2+ weeks · **Priority:** High · **Target:** 21 May 2026
+
+**Data model — `PropertyAsset`:**
+
+| Field | Type | Notes |
+|---|---|---|
+| id | UUID | PK |
+| code | String | Unique; system-generated `PROP-NNNNN`; user may set a custom alias (unique, immutable once set) |
+| assetClassId | FK → LookupItem | Must resolve to "Property" class |
+| ownerId | FK → User | Defaults to creating user; changeable by admin |
+| managedByUserId | FK → User, nullable | Asset manager user in the system |
+| managedByCompanyId | FK → Company, nullable | External management company |
+| ownershipTypeId | FK → LookupItem | Ownership Type |
+| addressLine1–postCode–country | String fields | Standard address |
+| propertyStatusId | FK → LookupItem | Property Status |
+| propertyPurposeId | FK → LookupItem | Property Purpose |
+| description | String? | Free text e.g. "3-bed bungalow" |
+| purchaseDate | DateTime? | |
+| purchasePrice | Decimal? | |
+| isFinanced | Boolean? | true = mortgage, false = cash |
+| depositPaid | Decimal? | |
+| dutiesTaxes | Decimal? | |
+| legalFees | Decimal? | |
+| createdAt / updatedAt / deletedAt | — | Soft delete |
+
+**Sub-entities:**
+- `ValuationEntry { id, assetId, valuationDate, valuationAmount, valuationMethod, valuedBy, notes, createdAt }`
+- `MortgageEntry { id, assetId, lender, productName, mortgageTypeId, loanAmount, interestRate, termYears, paymentStatusId, startDate, settledAt?, notes, createdAt }`
+- `ShareholdingEntry { id, assetId, shareholderName, ownershipPercent, profitPercent, notes, createdAt }` — ownershipPercent sum across all entries for an asset must equal 100%
+- `TransactionEntry { id, assetId, date, description, amount, categoryId (FK → LookupItem), createdAt }`
+
+**Endpoints:**
+- `POST /api/v1/assets/properties` — create
+- `GET /api/v1/assets/properties` — paginated list
+- `GET /api/v1/assets/properties/:id` — detail with all sub-entities
+- `PATCH /api/v1/assets/properties/:id` — update (owner, managing user, or admin only)
+- `DELETE /api/v1/assets/properties/:id` — soft delete (owner or admin only)
+- Sub-entity endpoints for valuations, mortgages, shareholdings, transactions (POST/PATCH/GET per type)
+
+**Access control:**
+- View: owner, managing user, admins
+- Create: any authenticated user
+- Update: owner, managing user, admins
+- Delete: owner, admins
+
+---
+
+### ITER-4-003 · Property Registration Wizard
+
+**As an** asset_owner or asset_manager
+**I want** to register a new property asset through a guided multi-step wizard
+**So that** I can complete the process correctly without being overwhelmed by a single large form
+
+**Size:** L · **Estimate:** 1–2 weeks · **Priority:** High · **Target:** 23 May 2026
+
+**Wizard steps:**
+1. **Basic Details** — Property code (auto-generated, user can override), ownership type, address fields
+2. **Property Info** — Property purpose, status, description, manager (user or company selector)
+3. **Purchase Details** — Purchase date, price, financed/cash, deposit, duties, legal fees
+4. **Shareholding** — Add shareholding entries with live validation that percentages sum to 100% (skippable for sole ownership)
+5. **Valuation** — Add initial valuation (optional, can be added later)
+6. **Mortgage** — Add mortgage details (shown only if "Financed" selected in step 3; skippable)
+7. **Review & Confirm** — Summary of all entered data with edit links back to each step
+
+**Acceptance Criteria:**
+- [ ] Step indicator shows current position; completed steps are visually marked
+- [ ] Partial progress preserved in React state so navigating back doesn't lose data
+- [ ] Wizard submits all data in a single API call on the final confirmation step
+- [ ] Inline validation on each step before allowing "Next"
+- [ ] On success, redirect to the new asset's detail page
+- [ ] Cancelling from any step returns to the asset listing (with confirmation prompt if data was entered)
+
+---
+
+### ITER-4-004 · Property Asset Detail Page
+
+**As an** authorised user
+**I want** to view a full asset detail page
+**So that** I can see all information about an asset in one place and manage its sub-entities
+
+**Size:** L · **Estimate:** 1–2 weeks · **Priority:** High · **Target:** 26 May 2026
+
+**Acceptance Criteria:**
+- [ ] `/assets/:id` page with tabbed sections: **Overview**, **Financials** (purchase info + valuation history + mortgage history), **Shareholding**, **Transactions**, **Documents** (placeholder for ITER-5)
+- [ ] Current valuation (most recent by date) prominently displayed in Overview
+- [ ] Active mortgage (settledAt is null) distinguished from historical/settled mortgages
+- [ ] Each sub-entity section has an inline "Add" button (modal or inline form — no separate page)
+- [ ] Transaction list is paginated and sortable by date
+- [ ] Edit button on Overview opens a direct edit form
+- [ ] Delete asset button with confirmation modal (soft delete)
+- [ ] Breadcrumb: Assets → [Property Code]
+- [ ] Edit and Delete controls visible only to owner, managing user, or admins
+
+---
+
+### ITER-4-005 · Database Schema — Iteration 4
+
+**As a** developer
+**I want** all Iteration 4 database tables created via Prisma migrations
+**So that** schema changes are version-controlled and reproducible
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 15 May 2026
+
+**Acceptance Criteria:**
+- [ ] New Prisma models: `PropertyAsset`, `ValuationEntry`, `MortgageEntry`, `ShareholdingEntry`, `TransactionEntry`
+- [ ] Sequential property code generator implemented (DB sequence or application-level with uniqueness retry)
+- [ ] Appropriate indexes added (ownerId, managedByUserId, deletedAt, postCode on PropertyAsset)
+- [ ] All migrations committed; `db:migrate` and `db:seed` pass
+- [ ] Prisma client regenerated
+
+---
+
+### ITER-4-006 · CI Updates — Iteration 4
+
+**As a** developer
+**I want** the CI pipeline to validate all Iteration 4 changes
+**So that** regressions are caught automatically before merge
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** Medium · **Target:** 28 May 2026
+
+**Acceptance Criteria:**
+- [ ] API tests for all property asset and sub-entity endpoints
+- [ ] Access control tests: owner vs non-owner vs admin scenarios
+- [ ] Test count does not decrease from Iteration 3 baseline
+
+---
+
+## Iteration 4 Delivery Checklist
+
+| Story | Title | Size | Priority | Target | Status |
+|---|---|---|---|---|---|
+| ITER-4-001 | Asset Register Navigation & Listing Page | M | High | 19 May 2026 | ⬜ |
+| ITER-4-002 | Property Asset API (CRUD + Access Control) | XL | High | 21 May 2026 | ⬜ |
+| ITER-4-003 | Property Registration Wizard | L | High | 23 May 2026 | ⬜ |
+| ITER-4-004 | Property Asset Detail Page | L | High | 26 May 2026 | ⬜ |
+| ITER-4-005 | Database Schema — Iteration 4 | M | High | 15 May 2026 | ⬜ |
+| ITER-4-006 | CI Updates — Iteration 4 | S | Medium | 28 May 2026 | ⬜ |
+
+---
+
+## 14. Epic: ITER-5 — Document Management {#epic-5}
+
+**Epic ID:** ITER-5
+**Epic Title:** Document Management
+**Goal:** A fully featured document management system allowing upload, tile-grid browsing, and in-app viewing of PDF/image documents associated with assets, accessible to all authenticated users within their permission scope.
+**Target Delivery:** 11 Jun 2026
+**Definition of Done:** Documents can be uploaded, searched, viewed in a modal, and linked to assets; storage adapter abstraction in place; CI green; no regressions.
+
+---
+
+## 15. User Stories — Iteration 5 {#user-stories-5}
+
+---
+
+### ITER-5-001 · Document Management Navigation & Listing Page
+
+**As an** authenticated user
+**I want** a dedicated Documents section with a tile grid listing
+**So that** I can find and manage all my documents in one place
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 1 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Sidebar navigation gains a "Documents" item (→ `/documents`) visible to all authenticated roles
+- [ ] Listing page defaults to **tile grid** view (switchable to table view)
+- [ ] **Tile card** shows: file-type icon (PDF / image), document title, document type badge, related asset code, date uploaded, uploader name; **View** and **Delete** action buttons
+- [ ] Table view columns: Title, Type, Related Asset, Uploaded By, Date Uploaded, actions
+- [ ] Server-side search: filter by title, document type, related asset code, uploader
+- [ ] `asset_owner` / `asset_manager` see only documents where they are owner or uploader, or the related asset is one they own/manage; admins see all
+- [ ] Empty state with upload prompt
+
+---
+
+### ITER-5-002 · Document Upload API & Storage Layer
+
+**As a** developer
+**I want** a secure, abstracted document upload API
+**So that** files can be stored reliably in development (filesystem) and production (S3-compatible) without code changes
+
+**Size:** L · **Estimate:** 1–2 weeks · **Priority:** High · **Target:** 28 May 2026
+
+**Document model:**
+`Document { id, title, fileName (original), storagePath (opaque UUID-based), mimeType, fileSizeBytes, documentTypeId (FK → LookupItem), ownerId (FK → User), uploadedById (FK → User), relatedAssetId (FK → PropertyAsset, nullable), description, createdAt, updatedAt, deletedAt }`
+
+**Storage adapter pattern:**
+- `StorageProvider` interface: `upload()`, `download()`, `delete()`
+- `LocalStorageProvider` (dev): `apps/api/uploads/` (gitignored), served via `/api/v1/documents/:id/file`
+- `S3StorageProvider` (prod): S3-compatible bucket, served via pre-signed URLs
+- Provider selected via `STORAGE_PROVIDER` env var (`local` | `s3`)
+
+**Endpoints:**
+- `POST /api/v1/documents` — multipart/form-data; PDF, PNG, JPG only; max 20 MB
+- `GET /api/v1/documents` — paginated list with filters
+- `GET /api/v1/documents/:id` — document metadata
+- `GET /api/v1/documents/:id/file` — serve/stream file or return pre-signed URL
+- `DELETE /api/v1/documents/:id` — soft delete + remove from storage
+
+**Security:**
+- [ ] File type validated by MIME type AND magic bytes (not just file extension)
+- [ ] Storage paths are opaque UUIDs — never the original filename (prevents path traversal)
+- [ ] No unauthenticated access to any file endpoint
+
+---
+
+### ITER-5-003 · Document Tile Grid UI with Modal Viewer
+
+**As a** user
+**I want** to view documents in an attractive tile grid and open them inside the app
+**So that** I can review documents without leaving the page or downloading them
+
+**Size:** L · **Estimate:** 1–2 weeks · **Priority:** High · **Target:** 4 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Responsive tile grid: 1 col mobile, 2 col tablet, 3–4 col desktop
+- [ ] Clicking a tile or the **View** button opens a **modal** with document preview:
+  - PDF: rendered using `react-pdf` or an `<iframe>` pointing at the file endpoint
+  - Images: rendered in an `<img>` tag with zoom capability
+  - Modal has: document title, metadata panel, download button, close button
+- [ ] **Delete** button on tile shows confirmation dialog before soft-deleting
+- [ ] Upload button opens an **Upload Modal** (drag-and-drop or browse): title, description, document type (dropdown), related asset (typeahead), file picker; client-side validation
+- [ ] Optimistic UI: tile appears immediately after successful upload
+
+---
+
+### ITER-5-004 · Asset–Document Linkage
+
+**As a** user managing a property asset
+**I want** to upload and view documents directly from the asset detail page
+**So that** all documents relevant to an asset are accessible without navigating away
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 8 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] The **Documents** tab on the Property Asset Detail Page (ITER-4-004 placeholder) is fully implemented
+- [ ] Tab shows a tile grid of documents where `relatedAssetId = current asset`
+- [ ] "Upload Document" button on this tab opens the upload modal with `relatedAssetId` pre-filled and locked
+- [ ] Documents uploaded from this tab appear in both the asset's Documents tab and the global `/documents` listing
+- [ ] Unlinking a document from an asset (editing `relatedAssetId` to null) is permitted but does not delete the document
+
+---
+
+### ITER-5-005 · Database Schema — Iteration 5
+
+**As a** developer
+**I want** all Iteration 5 database tables and config created via Prisma migrations
+**So that** schema changes are version-controlled and reproducible
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** High · **Target:** 26 May 2026
+
+**Acceptance Criteria:**
+- [ ] New Prisma model: `Document` with all fields above
+- [ ] Indexes on `(ownerId)`, `(uploadedById)`, `(relatedAssetId)`, `(documentTypeId)`, `(deletedAt)`
+- [ ] `uploads/` directory added to `.gitignore`
+- [ ] `STORAGE_PROVIDER`, `STORAGE_LOCAL_PATH`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` added to `.env.example`
+- [ ] Migrations and seed pass cleanly
+
+---
+
+### ITER-5-006 · CI Updates — Iteration 5
+
+**As a** developer
+**I want** the CI pipeline to validate all Iteration 5 changes
+**So that** regressions are caught automatically before merge
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** Medium · **Target:** 11 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] API tests for all document endpoints (upload, list, serve, delete)
+- [ ] Access control tests (owner vs non-owner vs admin)
+- [ ] File type validation tests (reject disallowed MIME types)
+- [ ] Test count does not decrease from Iteration 4 baseline
+
+---
+
+## Iteration 5 Delivery Checklist
+
+| Story | Title | Size | Priority | Target | Status |
+|---|---|---|---|---|---|
+| ITER-5-001 | Document Management Navigation & Listing Page | M | High | 1 Jun 2026 | ⬜ |
+| ITER-5-002 | Document Upload API & Storage Layer | L | High | 28 May 2026 | ⬜ |
+| ITER-5-003 | Document Tile Grid UI with Modal Viewer | L | High | 4 Jun 2026 | ⬜ |
+| ITER-5-004 | Asset–Document Linkage | M | High | 8 Jun 2026 | ⬜ |
+| ITER-5-005 | Database Schema — Iteration 5 | S | High | 26 May 2026 | ⬜ |
+| ITER-5-006 | CI Updates — Iteration 5 | S | Medium | 11 Jun 2026 | ⬜ |
+
+---
+
+## 16. Epic: ITER-6 — User Onboarding Wizard {#epic-6}
+
+**Epic ID:** ITER-6
+**Epic Title:** User Onboarding Wizard
+**Goal:** When a non-admin user logs in for the first time (or before completing onboarding), they are guided through a wizard that confirms their role, collects their profile, associates them with a company, and walks them through registering at least one property asset. Once complete, the user is permanently marked as onboarded.
+**Target Delivery:** 25 Jun 2026
+**Definition of Done:** Onboarding wizard fully functional end-to-end; non-onboarded users always redirected to `/onboarding` before accessing the app; onboarded users never see the wizard again; CI green.
+
+---
+
+## 17. User Stories — Iteration 6 {#user-stories-6}
+
+---
+
+### ITER-6-001 · Onboarding State, Routing Guard & DB Changes
+
+**As a** developer
+**I want** the system to track whether a user has completed onboarding
+**So that** incomplete profiles can be detected and the wizard triggered automatically
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 15 Jun 2026
+
+**DB changes on `User` model:**
+`isOnboarded Boolean @default(false)`, `onboardedAt DateTime?`, `phoneNumber String?`, address fields (line1, line2, city, county, postCode, country), `companyId FK → Company (nullable)`
+
+**Acceptance Criteria:**
+- [ ] After `useAuthBootstrap` confirms auth, if `user.role` is `asset_owner` or `asset_manager` and `user.isOnboarded === false`, redirect to `/onboarding`
+- [ ] `/onboarding` route accessible only to non-admin, non-onboarded users; already-onboarded users are redirected to `/`
+- [ ] Direct navigation to any non-onboarding protected route by a non-onboarded user redirects to `/onboarding`
+- [ ] Admins (`super_admin`, `system_admin`) are never subject to the onboarding check
+
+---
+
+### ITER-6-002 · Onboarding Wizard — Role Selection Step
+
+**As a** newly registered user
+**I want** to confirm whether I am an asset owner or an asset manager
+**So that** the system gives me the right experience and permissions
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** High · **Target:** 16 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Step 1: two clearly illustrated cards — "I own assets" (→ `asset_owner`) and "I manage assets on behalf of others" (→ `asset_manager`)
+- [ ] Defaults to the role assigned at registration
+- [ ] Selecting a role calls `PATCH /api/v1/auth/profile/role` (new self-service endpoint; non-admin → non-admin transitions only)
+- [ ] Role change is audited
+
+---
+
+### ITER-6-003 · Onboarding Wizard — Profile Completion Step
+
+**As a** user being onboarded
+**I want** to provide my contact and address details
+**So that** the system has my full profile
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** High · **Target:** 17 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] firstName, lastName, and email pre-filled from registration as **read-only**
+- [ ] Editable fields: phone number, address line 1, address line 2, city, county, post code, country
+- [ ] All fields validated before proceeding to next step
+- [ ] Data held in wizard state — not saved to DB until final submission
+
+---
+
+### ITER-6-004 · Onboarding Wizard — Company Association Step
+
+**As a** user being onboarded
+**I want** to associate myself with a company (if applicable) or skip this step
+**So that** my account is linked to the correct organisation
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** Medium · **Target:** 19 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Searchable typeahead for existing companies (`GET /api/v1/companies?q=`)
+- [ ] "My company is not listed" option: opens an inline mini-form to create a new company; saved immediately on confirm and then selected in the wizard
+- [ ] "I am not associated with a company" option skips this step (companyId remains null)
+- [ ] Selected/created company held in wizard state and saved at final submission
+
+---
+
+### ITER-6-005 · Onboarding Wizard — Asset Registration Step
+
+**As a** user being onboarded
+**I want** to register at least one property asset as part of onboarding
+**So that** I have something meaningful in the system from day one
+
+**Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 22 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Step presents a simplified version of the ITER-4 property wizard (Basic Details + Purchase Details only)
+- [ ] User cannot skip this step to complete onboarding — at least one asset must be created or already exist
+- [ ] "Register another asset" button allows adding more than one asset during onboarding
+- [ ] Registered assets appear in a summary list at the bottom of the step
+- [ ] Assets are created immediately (not deferred to final submission)
+- [ ] If the user already has ≥ 1 asset in the system, this step shows existing assets as satisfied; user can add more or proceed
+
+---
+
+### ITER-6-006 · Onboarding Wizard — Final Review & Completion
+
+**As a** user
+**I want** to review everything before completing onboarding
+**So that** I can correct any mistakes before my profile is finalised
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** High · **Target:** 23 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Final step shows a summary: role, profile details, company association, registered assets
+- [ ] Edit links on each section navigate back to that step (all data retained)
+- [ ] "Complete Setup" button: saves profile fields and sets `isOnboarded = true`, `onboardedAt = now()`
+- [ ] On success: redirect to `/assets` for `asset_owner`/`asset_manager`
+- [ ] Wizard uses a full-screen branded layout (no `AppShell` sidebar)
+
+---
+
+### ITER-6-007 · Database Schema — Iteration 6
+
+**As a** developer
+**I want** all Iteration 6 database changes created via Prisma migrations
+**So that** schema changes are version-controlled and reproducible
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** High · **Target:** 13 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] Migration adds onboarding fields to `users` table: `is_onboarded`, `onboarded_at`, `phone_number`, `address_line_1`, `address_line_2`, `city`, `county`, `post_code`, `country`, `company_id`
+- [ ] FK constraint: `company_id` → `companies.id` ON DELETE SET NULL
+- [ ] `PATCH /api/v1/auth/profile/role` validated against allowed role transitions (non-admin → non-admin only)
+- [ ] Migrations and seed pass cleanly
+
+---
+
+### ITER-6-008 · CI Updates — Iteration 6
+
+**As a** developer
+**I want** the CI pipeline to validate all Iteration 6 changes
+**So that** regressions are caught automatically before merge
+
+**Size:** S · **Estimate:** 1–2 days · **Priority:** Medium · **Target:** 25 Jun 2026
+
+**Acceptance Criteria:**
+- [ ] API tests for all onboarding endpoints: role update, profile update, onboarding-complete
+- [ ] Guard tests: non-onboarded user redirected; admin bypasses guard
+- [ ] Test count does not decrease from Iteration 5 baseline
+
+---
+
+## Iteration 6 Delivery Checklist
+
+| Story | Title | Size | Priority | Target | Status |
+|---|---|---|---|---|---|
+| ITER-6-001 | Onboarding State, Routing Guard & DB Changes | M | High | 15 Jun 2026 | ⬜ |
+| ITER-6-002 | Wizard — Role Selection Step | S | High | 16 Jun 2026 | ⬜ |
+| ITER-6-003 | Wizard — Profile Completion Step | S | High | 17 Jun 2026 | ⬜ |
+| ITER-6-004 | Wizard — Company Association Step | M | Medium | 19 Jun 2026 | ⬜ |
+| ITER-6-005 | Wizard — Asset Registration Step | M | High | 22 Jun 2026 | ⬜ |
+| ITER-6-006 | Wizard — Final Review & Completion | S | High | 23 Jun 2026 | ⬜ |
+| ITER-6-007 | Database Schema — Iteration 6 | S | High | 13 Jun 2026 | ⬜ |
+| ITER-6-008 | CI Updates — Iteration 6 | S | Medium | 25 Jun 2026 | ⬜ |
 
 ---
 

@@ -20,25 +20,35 @@ function getOrStartRefresh(): Promise<LoginResponse> {
 }
 
 /**
- * On page load: if the Zustand store has a persisted user but no access token
- * (i.e. the user refreshed the page), attempt a silent token refresh using the
- * HttpOnly refresh-token cookie. On success the access token is restored in
- * memory; on failure (cookie expired / revoked) the user is signed out.
+ * Waits for Zustand's persist middleware to finish rehydrating from localStorage
+ * (which is microtask-async even for synchronous storage), then optionally
+ * silently refreshes the access token via the HttpOnly cookie if the user is
+ * persisted but the in-memory token is gone (e.g. after a hard page reload).
  *
- * Returns `ready: true` once the bootstrap attempt has settled, so callers can
- * gate rendering until auth state is fully resolved.
+ * Returns `ready: true` once auth state is fully resolved so callers can gate
+ * rendering until then, preventing ProtectedRoute from redirecting prematurely.
  */
 export function useAuthBootstrap(): { ready: boolean } {
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
   const setAuth = useAuthStore((s) => s.setAuth);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
-  // If user is present and token is already in memory, no bootstrap needed.
-  const [ready, setReady] = useState(!(user !== null && accessToken === null));
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (user === null || accessToken !== null) {
+    // Wait until Zustand has finished reading from localStorage
+    if (!hasHydrated) return;
+
+    // No persisted user — nothing to refresh, allow rendering immediately
+    if (user === null) {
+      setReady(true);
+      return;
+    }
+
+    // Token already in memory (e.g. just logged in) — no refresh needed
+    if (accessToken !== null) {
       setReady(true);
       return;
     }
@@ -48,7 +58,7 @@ export function useAuthBootstrap(): { ready: boolean } {
       .then((res) => setAuth(res.user, res.accessToken))
       .catch(() => clearAuth())
       .finally(() => setReady(true));
-  }, []); // intentionally run once on mount only
+  }, [hasHydrated]); // re-run only when hydration state changes
 
   return { ready };
 }

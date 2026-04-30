@@ -138,6 +138,8 @@ const adminNav: Array<NavItem | NavGroup> = [
     children: [
       { label: 'User Management', to: '/admin/users', icon: UsersIcon },
       { label: 'System Settings', to: '/admin/settings', icon: Cog6ToothIcon },
+      { label: 'Lookup Lists', to: '/admin/settings/lookup', icon: DocumentTextIcon },
+      { label: 'Companies', to: '/admin/settings/companies', icon: UsersIcon },
     ],
   },
   {

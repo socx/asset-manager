@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RegisterPage from './pages/RegisterPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ResendVerificationPage from './pages/ResendVerificationPage';
@@ -15,6 +15,8 @@ import UsersPage from './pages/admin/UsersPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import AuditLogsPage from './pages/admin/AuditLogsPage';
 import SystemLogsPage from './pages/admin/SystemLogsPage';
+import LookupListPage from './pages/admin/LookupListPage';
+import CompaniesPage from './pages/admin/CompaniesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
 import { useAuthBootstrap } from './hooks/useAuthBootstrap';
@@ -99,6 +101,30 @@ function AppRoutes() {
             <ProtectedRoute roles={['super_admin']}>
               <AppShell title="System Settings">
                 <SettingsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings/lookup"
+          element={<Navigate to="/admin/settings/lookup/document_type" replace />}
+        />
+        <Route
+          path="/admin/settings/lookup/:type"
+          element={
+            <ProtectedRoute roles={ADMIN_ROLES}>
+              <AppShell title="Lookup Lists">
+                <LookupListPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings/companies"
+          element={
+            <ProtectedRoute roles={ADMIN_ROLES}>
+              <AppShell title="Companies">
+                <CompaniesPage />
               </AppShell>
             </ProtectedRoute>
           }

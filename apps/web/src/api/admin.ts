@@ -270,3 +270,139 @@ export function listSystemLogs(
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return adminReq<ListSystemLogsResponse>(`/system-logs${query}`, { method: 'GET' }, accessToken);
 }
+
+// ── Lookup Items (ITER-3-002) ─────────────────────────────────────────────────
+
+export interface LookupItem {
+  id: string;
+  type: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function listAdminLookupItems(
+  type: string,
+  accessToken: string,
+): Promise<{ items: LookupItem[] }> {
+  return adminReq<{ items: LookupItem[] }>(`/lookup/${type}`, { method: 'GET' }, accessToken);
+}
+
+export function createLookupItem(
+  type: string,
+  payload: { name: string; description?: string; sortOrder?: number },
+  accessToken: string,
+): Promise<{ item: LookupItem }> {
+  return adminReq<{ item: LookupItem }>(
+    `/lookup/${type}`,
+    { method: 'POST', body: JSON.stringify(payload) },
+    accessToken,
+  );
+}
+
+export function updateLookupItem(
+  id: string,
+  payload: { name?: string; description?: string | null; sortOrder?: number; isActive?: boolean },
+  accessToken: string,
+): Promise<{ item: LookupItem }> {
+  return adminReq<{ item: LookupItem }>(
+    `/lookup-items/${id}`,
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    accessToken,
+  );
+}
+
+export function deleteLookupItem(
+  id: string,
+  accessToken: string,
+): Promise<{ message: string }> {
+  return adminReq<{ message: string }>(`/lookup-items/${id}`, { method: 'DELETE' }, accessToken);
+}
+
+// ── Companies (ITER-3-003) ────────────────────────────────────────────────────
+
+export interface AdminCompany {
+  id: string;
+  name: string;
+  companyType: { id: string; name: string } | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  county: string | null;
+  postCode: string | null;
+  country: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListAdminCompaniesParams {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+}
+
+export interface ListAdminCompaniesResponse {
+  companies: AdminCompany[];
+  nextCursor: string | null;
+}
+
+export function listAdminCompanies(
+  params: ListAdminCompaniesParams,
+  accessToken: string,
+): Promise<ListAdminCompaniesResponse> {
+  const qs = new URLSearchParams();
+  if (params.cursor) qs.set('cursor', params.cursor);
+  if (params.limit) qs.set('limit', String(params.limit));
+  if (params.search) qs.set('search', params.search);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return adminReq<ListAdminCompaniesResponse>(`/companies${query}`, { method: 'GET' }, accessToken);
+}
+
+export function getAdminCompany(id: string, accessToken: string): Promise<{ company: AdminCompany }> {
+  return adminReq<{ company: AdminCompany }>(`/companies/${id}`, { method: 'GET' }, accessToken);
+}
+
+export interface CompanyPayload {
+  name: string;
+  companyTypeId?: string | null;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  county?: string;
+  postCode?: string;
+  country?: string;
+}
+
+export function createAdminCompany(
+  payload: CompanyPayload,
+  accessToken: string,
+): Promise<{ company: AdminCompany }> {
+  return adminReq<{ company: AdminCompany }>(
+    '/companies',
+    { method: 'POST', body: JSON.stringify(payload) },
+    accessToken,
+  );
+}
+
+export function updateAdminCompany(
+  id: string,
+  payload: Partial<CompanyPayload & { isActive: boolean }>,
+  accessToken: string,
+): Promise<{ company: AdminCompany }> {
+  return adminReq<{ company: AdminCompany }>(
+    `/companies/${id}`,
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    accessToken,
+  );
+}
+
+export function deleteAdminCompany(
+  id: string,
+  accessToken: string,
+): Promise<{ message: string }> {
+  return adminReq<{ message: string }>(`/companies/${id}`, { method: 'DELETE' }, accessToken);
+}

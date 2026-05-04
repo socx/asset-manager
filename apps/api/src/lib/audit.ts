@@ -8,8 +8,8 @@ interface AuditEntry {
   action: string;
   entityType: string;
   entityId?: string;
-  newValue?: Prisma.InputJsonValue;
-  oldValue?: Prisma.InputJsonValue;
+  newValue?: Prisma.InputJsonValue | null;
+  oldValue?: Prisma.InputJsonValue | null;
   ipAddress?: string;
   userAgent?: string;
 }

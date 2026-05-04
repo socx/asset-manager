@@ -186,3 +186,155 @@ export const updateCompanySchema = z.object({
 
 export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
 export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;
+
+// ── Property asset schemas (ITER-4) ──────────────────────────────────────────
+
+const moneySchema = z.number().nonnegative();
+const percentSchema = z.number().min(0).max(100);
+
+export const createValuationEntrySchema = z.object({
+  valuationDate: z.string().datetime(),
+  valuationAmount: moneySchema,
+  valuationMethod: z.string().min(1).max(100),
+  valuedBy: z.string().max(200).optional(),
+  notes: z.string().max(1000).optional(),
+});
+
+export const createMortgageEntrySchema = z.object({
+  lender: z.string().min(1).max(200),
+  productName: z.string().max(200).optional(),
+  mortgageTypeId: z.string().uuid(),
+  loanAmount: moneySchema,
+  interestRate: z.number().min(0).max(100).optional(),
+  termYears: z.number().int().positive().optional(),
+  paymentStatusId: z.string().uuid(),
+  startDate: z.string().datetime(),
+  settledAt: z.string().datetime().optional(),
+  notes: z.string().max(1000).optional(),
+});
+
+export const createShareholdingEntrySchema = z.object({
+  shareholderName: z.string().min(1).max(200),
+  ownershipPercent: percentSchema,
+  profitPercent: percentSchema,
+  notes: z.string().max(1000).optional(),
+});
+
+export const createTransactionEntrySchema = z.object({
+  date: z.string().datetime(),
+  description: z.string().min(1).max(255),
+  amount: z.number(),
+  categoryId: z.string().uuid(),
+});
+
+export const createPropertyAssetSchema = z.object({
+  customAlias: z.string().min(1).max(50).regex(/^[A-Za-z0-9_-]+$/).optional(),
+  assetClassId: z.string().uuid().optional(),
+  ownerId: z.string().uuid().optional(),
+  managedByUserId: z.string().uuid().nullable().optional(),
+  managedByCompanyId: z.string().uuid().nullable().optional(),
+  ownershipTypeId: z.string().uuid(),
+  addressLine1: z.string().min(1).max(200),
+  addressLine2: z.string().max(200).optional(),
+  city: z.string().min(1).max(100),
+  county: z.string().max(100).optional(),
+  postCode: z.string().min(1).max(20),
+  country: z.string().min(1).max(100),
+  propertyStatusId: z.string().uuid(),
+  propertyPurposeId: z.string().uuid(),
+  description: z.string().max(1000).optional(),
+  purchaseDate: z.string().datetime().optional(),
+  purchasePrice: moneySchema.optional(),
+  isFinanced: z.boolean().optional(),
+  depositPaid: moneySchema.optional(),
+  dutiesTaxes: moneySchema.optional(),
+  legalFees: moneySchema.optional(),
+  valuations: z.array(createValuationEntrySchema).optional(),
+  mortgages: z.array(createMortgageEntrySchema).optional(),
+  shareholdings: z.array(createShareholdingEntrySchema).optional(),
+  transactions: z.array(createTransactionEntrySchema).optional(),
+});
+
+export const updatePropertyAssetSchema = z.object({
+  customAlias: z.string().min(1).max(50).regex(/^[A-Za-z0-9_-]+$/).optional(),
+  ownerId: z.string().uuid().optional(),
+  managedByUserId: z.string().uuid().nullable().optional(),
+  managedByCompanyId: z.string().uuid().nullable().optional(),
+  ownershipTypeId: z.string().uuid().optional(),
+  addressLine1: z.string().min(1).max(200).optional(),
+  addressLine2: z.string().max(200).nullable().optional(),
+  city: z.string().min(1).max(100).optional(),
+  county: z.string().max(100).nullable().optional(),
+  postCode: z.string().min(1).max(20).optional(),
+  country: z.string().min(1).max(100).optional(),
+  propertyStatusId: z.string().uuid().optional(),
+  propertyPurposeId: z.string().uuid().optional(),
+  description: z.string().max(1000).nullable().optional(),
+  purchaseDate: z.string().datetime().nullable().optional(),
+  purchasePrice: moneySchema.nullable().optional(),
+  isFinanced: z.boolean().nullable().optional(),
+  depositPaid: moneySchema.nullable().optional(),
+  dutiesTaxes: moneySchema.nullable().optional(),
+  legalFees: moneySchema.nullable().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export const createValuationEntryInputSchema = createValuationEntrySchema;
+export const createMortgageEntryInputSchema = createMortgageEntrySchema;
+export const createShareholdingEntryInputSchema = createShareholdingEntrySchema;
+export const createTransactionEntryInputSchema = createTransactionEntrySchema;
+
+export const updateValuationEntrySchema = z.object({
+  valuationDate: z.string().datetime().optional(),
+  valuationAmount: moneySchema.optional(),
+  valuationMethod: z.string().min(1).max(100).optional(),
+  valuedBy: z.string().max(200).nullable().optional(),
+  notes: z.string().max(1000).nullable().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export const updateMortgageEntrySchema = z.object({
+  lender: z.string().min(1).max(200).optional(),
+  productName: z.string().max(200).nullable().optional(),
+  mortgageTypeId: z.string().uuid().optional(),
+  loanAmount: moneySchema.optional(),
+  interestRate: z.number().min(0).max(100).nullable().optional(),
+  termYears: z.number().int().positive().nullable().optional(),
+  paymentStatusId: z.string().uuid().optional(),
+  startDate: z.string().datetime().optional(),
+  settledAt: z.string().datetime().nullable().optional(),
+  notes: z.string().max(1000).nullable().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export const updateShareholdingEntrySchema = z.object({
+  shareholderName: z.string().min(1).max(200).optional(),
+  ownershipPercent: percentSchema.optional(),
+  profitPercent: percentSchema.optional(),
+  notes: z.string().max(1000).nullable().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export const updateTransactionEntrySchema = z.object({
+  date: z.string().datetime().optional(),
+  description: z.string().min(1).max(255).optional(),
+  amount: z.number().optional(),
+  categoryId: z.string().uuid().optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'At least one field must be provided',
+});
+
+export type CreatePropertyAssetInput = z.infer<typeof createPropertyAssetSchema>;
+export type UpdatePropertyAssetInput = z.infer<typeof updatePropertyAssetSchema>;
+export type CreateValuationEntryInput = z.infer<typeof createValuationEntryInputSchema>;
+export type CreateMortgageEntryInput = z.infer<typeof createMortgageEntryInputSchema>;
+export type CreateShareholdingEntryInput = z.infer<typeof createShareholdingEntryInputSchema>;
+export type CreateTransactionEntryInput = z.infer<typeof createTransactionEntryInputSchema>;
+export type UpdateValuationEntryInput = z.infer<typeof updateValuationEntrySchema>;
+export type UpdateMortgageEntryInput = z.infer<typeof updateMortgageEntrySchema>;
+export type UpdateShareholdingEntryInput = z.infer<typeof updateShareholdingEntrySchema>;
+export type UpdateTransactionEntryInput = z.infer<typeof updateTransactionEntrySchema>;

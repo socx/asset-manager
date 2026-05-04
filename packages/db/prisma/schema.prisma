@@ -74,6 +74,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   mfaBackupCodes      MfaBackupCode[]
   auditLogs           AuditLog[]
+  ownedProperties     PropertyAsset[]      @relation("PropertyOwner")
+  managedProperties   PropertyAsset[]      @relation("PropertyManagerUser")
 
   @@map("users")
 }
@@ -197,7 +199,14 @@ model LookupItem {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  companies   Company[]
+  companies                    Company[]
+  assetClassProperties         PropertyAsset[]    @relation("PropertyAssetClass")
+  ownershipTypeProperties      PropertyAsset[]    @relation("PropertyAssetOwnershipType")
+  propertyStatusProperties     PropertyAsset[]    @relation("PropertyAssetStatus")
+  propertyPurposeProperties    PropertyAsset[]    @relation("PropertyAssetPurpose")
+  mortgageTypeEntries          MortgageEntry[]    @relation("MortgageType")
+  mortgagePaymentStatusEntries MortgageEntry[]    @relation("MortgagePaymentStatus")
+  transactionCategoryEntries   TransactionEntry[] @relation("TransactionCategory")
 
   @@unique([type, name])
   @@index([type, isActive, sortOrder])
@@ -205,22 +214,140 @@ model LookupItem {
 }
 
 model Company {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String      @unique
-  companyTypeId String?     @map("company_type_id") @db.Uuid
-  addressLine1  String?     @map("address_line1")
-  addressLine2  String?     @map("address_line2")
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String    @unique
+  companyTypeId String?   @map("company_type_id") @db.Uuid
+  addressLine1  String?   @map("address_line1")
+  addressLine2  String?   @map("address_line2")
   city          String?
   county        String?
-  postCode      String?     @map("post_code")
+  postCode      String?   @map("post_code")
   country       String?
-  isActive      Boolean     @default(true) @map("is_active")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  deletedAt     DateTime?   @map("deleted_at")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
-  companyType   LookupItem? @relation(fields: [companyTypeId], references: [id], onDelete: SetNull)
+  companyType       LookupItem?     @relation(fields: [companyTypeId], references: [id], onDelete: SetNull)
+  managedProperties PropertyAsset[] @relation("PropertyManagerCompany")
 
   @@index([isActive])
   @@map("companies")
+}
+
+model PropertyAsset {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code               String    @unique
+  customAlias        String?   @unique @map("custom_alias")
+  assetClassId       String    @map("asset_class_id") @db.Uuid
+  ownerId            String    @map("owner_id") @db.Uuid
+  managedByUserId    String?   @map("managed_by_user_id") @db.Uuid
+  managedByCompanyId String?   @map("managed_by_company_id") @db.Uuid
+  ownershipTypeId    String    @map("ownership_type_id") @db.Uuid
+  addressLine1       String    @map("address_line1")
+  addressLine2       String?   @map("address_line2")
+  city               String
+  county             String?
+  postCode           String    @map("post_code")
+  country            String
+  propertyStatusId   String    @map("property_status_id") @db.Uuid
+  propertyPurposeId  String    @map("property_purpose_id") @db.Uuid
+  description        String?
+  purchaseDate       DateTime? @map("purchase_date")
+  purchasePrice      Decimal?  @map("purchase_price") @db.Decimal(14, 2)
+  isFinanced         Boolean?  @map("is_financed")
+  depositPaid        Decimal?  @map("deposit_paid") @db.Decimal(14, 2)
+  dutiesTaxes        Decimal?  @map("duties_taxes") @db.Decimal(14, 2)
+  legalFees          Decimal?  @map("legal_fees") @db.Decimal(14, 2)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  assetClass       LookupItem          @relation("PropertyAssetClass", fields: [assetClassId], references: [id], onDelete: Restrict)
+  owner            User                @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  managedByUser    User?               @relation("PropertyManagerUser", fields: [managedByUserId], references: [id], onDelete: SetNull)
+  managedByCompany Company?            @relation("PropertyManagerCompany", fields: [managedByCompanyId], references: [id], onDelete: SetNull)
+  ownershipType    LookupItem          @relation("PropertyAssetOwnershipType", fields: [ownershipTypeId], references: [id], onDelete: Restrict)
+  propertyStatus   LookupItem          @relation("PropertyAssetStatus", fields: [propertyStatusId], references: [id], onDelete: Restrict)
+  propertyPurpose  LookupItem          @relation("PropertyAssetPurpose", fields: [propertyPurposeId], references: [id], onDelete: Restrict)
+  valuations       ValuationEntry[]
+  mortgages        MortgageEntry[]
+  shareholdings    ShareholdingEntry[]
+  transactions     TransactionEntry[]
+
+  @@index([ownerId])
+  @@index([managedByUserId])
+  @@index([deletedAt])
+  @@index([postCode])
+  @@map("property_assets")
+}
+
+model ValuationEntry {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assetId         String   @map("asset_id") @db.Uuid
+  valuationDate   DateTime @map("valuation_date")
+  valuationAmount Decimal  @map("valuation_amount") @db.Decimal(14, 2)
+  valuationMethod String   @map("valuation_method")
+  valuedBy        String?  @map("valued_by")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  asset PropertyAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, valuationDate])
+  @@map("valuation_entries")
+}
+
+model MortgageEntry {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assetId         String    @map("asset_id") @db.Uuid
+  lender          String
+  productName     String?   @map("product_name")
+  mortgageTypeId  String    @map("mortgage_type_id") @db.Uuid
+  loanAmount      Decimal   @map("loan_amount") @db.Decimal(14, 2)
+  interestRate    Decimal?  @map("interest_rate") @db.Decimal(7, 4)
+  termYears       Int?      @map("term_years")
+  paymentStatusId String    @map("payment_status_id") @db.Uuid
+  startDate       DateTime  @map("start_date")
+  settledAt       DateTime? @map("settled_at")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  asset         PropertyAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  mortgageType  LookupItem    @relation("MortgageType", fields: [mortgageTypeId], references: [id], onDelete: Restrict)
+  paymentStatus LookupItem    @relation("MortgagePaymentStatus", fields: [paymentStatusId], references: [id], onDelete: Restrict)
+
+  @@index([assetId, settledAt])
+  @@map("mortgage_entries")
+}
+
+model ShareholdingEntry {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assetId          String   @map("asset_id") @db.Uuid
+  shareholderName  String   @map("shareholder_name")
+  ownershipPercent Decimal  @map("ownership_percent") @db.Decimal(5, 2)
+  profitPercent    Decimal  @map("profit_percent") @db.Decimal(5, 2)
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  asset PropertyAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@map("shareholding_entries")
+}
+
+model TransactionEntry {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assetId     String   @map("asset_id") @db.Uuid
+  date        DateTime
+  description String
+  amount      Decimal  @db.Decimal(14, 2)
+  categoryId  String   @map("category_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  asset    PropertyAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  category LookupItem    @relation("TransactionCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([assetId, date])
+  @@map("transaction_entries")
 }

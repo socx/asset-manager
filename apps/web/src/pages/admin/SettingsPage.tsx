@@ -162,7 +162,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {errorMsg && (
           <div className="mb-4 rounded bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
             {errorMsg}

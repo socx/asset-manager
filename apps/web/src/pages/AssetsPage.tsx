@@ -17,7 +17,7 @@ function requireAccessToken(token: string | null): string {
 }
 
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(amount);
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
 
 function addressOneLine(a: PropertyAssetListItem): string {
@@ -170,7 +170,7 @@ export default function AssetsPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto py-6">
           {/* View toggle */}
           <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
             <button

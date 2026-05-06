@@ -3,7 +3,29 @@
  * parallel and returns them as labelled arrays of { id, name }.
  */
 import { useQuery } from '@tanstack/react-query';
-import { listAdminLookupItems, listAdminCompanies, listUsers, type LookupItem } from '../api/admin';
+import { apiRequest } from '../api/auth';
+
+interface LookupItem {
+  id: string;
+  type: string;
+  name: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+interface WizardUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+interface WizardCompany {
+  id: string;
+  name: string;
+  companyType?: { id: string; name: string } | null;
+}
 
 export interface LookupOption {
   id: string;
@@ -27,62 +49,91 @@ function toOption(item: LookupItem): LookupOption {
   return { id: item.id, name: item.name };
 }
 
+function listLookupItems(type: string, accessToken: string): Promise<{ items: LookupItem[] }> {
+  return apiRequest<{ items: LookupItem[] }>(`/lookup/${type}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+async function listWizardUsers(accessToken: string): Promise<{ users: WizardUser[] }> {
+  try {
+    return await apiRequest<{ users: WizardUser[] }>('/admin/users?limit=200&status=active', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    return { users: [] };
+  }
+}
+
+async function listWizardCompanies(accessToken: string): Promise<{ companies: WizardCompany[] }> {
+  try {
+    return await apiRequest<{ companies: WizardCompany[] }>('/companies', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    return { companies: [] };
+  }
+}
+
 export function useWizardLookups(accessToken: string): WizardLookups {
   const opts = { enabled: !!accessToken };
 
   const ownershipQ = useQuery({
     queryKey: ['lookup', 'ownership_type'],
-    queryFn: () => listAdminLookupItems('ownership_type', accessToken),
+    queryFn: () => listLookupItems('ownership_type', accessToken),
     ...opts,
   });
   const statusQ = useQuery({
     queryKey: ['lookup', 'property_status'],
-    queryFn: () => listAdminLookupItems('property_status', accessToken),
+    queryFn: () => listLookupItems('property_status', accessToken),
     ...opts,
   });
   const purposeQ = useQuery({
     queryKey: ['lookup', 'property_purpose'],
-    queryFn: () => listAdminLookupItems('property_purpose', accessToken),
+    queryFn: () => listLookupItems('property_purpose', accessToken),
     ...opts,
   });
   const assetClassQ = useQuery({
     queryKey: ['lookup', 'asset_class'],
-    queryFn: () => listAdminLookupItems('asset_class', accessToken),
+    queryFn: () => listLookupItems('asset_class', accessToken),
     ...opts,
   });
   const mortgageTypeQ = useQuery({
     queryKey: ['lookup', 'mortgage_type'],
-    queryFn: () => listAdminLookupItems('mortgage_type', accessToken),
+    queryFn: () => listLookupItems('mortgage_type', accessToken),
     ...opts,
   });
   const mortgagePaymentStatusQ = useQuery({
     queryKey: ['lookup', 'mortgage_payment_status'],
-    queryFn: () => listAdminLookupItems('mortgage_payment_status', accessToken),
+    queryFn: () => listLookupItems('mortgage_payment_status', accessToken),
     ...opts,
   });
   const usersQ = useQuery({
-    queryKey: ['admin-users-all'],
-    queryFn: () => listUsers({ limit: 200, status: 'active' }, accessToken),
+    queryKey: ['wizard', 'users'],
+    queryFn: () => listWizardUsers(accessToken),
     ...opts,
   });
   const companiesQ = useQuery({
-    queryKey: ['admin-companies-all'],
-    queryFn: () => listAdminCompanies({ limit: 200 }, accessToken),
+    queryKey: ['wizard', 'companies'],
+    queryFn: () => listWizardCompanies(accessToken),
     ...opts,
   });
 
-  const isLoading = [ownershipQ, statusQ, purposeQ, assetClassQ, mortgageTypeQ, mortgagePaymentStatusQ, usersQ, companiesQ].some((q) => q.isLoading);
-  const isError   = [ownershipQ, statusQ, purposeQ, assetClassQ, mortgageTypeQ, mortgagePaymentStatusQ, usersQ, companiesQ].some((q) => q.isError);
+  const isLoading = [ownershipQ, statusQ, purposeQ, assetClassQ, mortgageTypeQ, mortgagePaymentStatusQ].some((q) => q.isLoading);
+  const isError = [ownershipQ, statusQ, purposeQ, assetClassQ, mortgageTypeQ, mortgagePaymentStatusQ].some((q) => q.isError);
 
   return {
-    ownershipTypes:         (ownershipQ.data?.items ?? []).filter((i) => i.isActive).map(toOption),
-    propertyStatuses:       (statusQ.data?.items ?? []).filter((i) => i.isActive).map(toOption),
-    propertyPurposes:       (purposeQ.data?.items ?? []).filter((i) => i.isActive).map(toOption),
-    assetClasses:           (assetClassQ.data?.items ?? []).filter((i) => i.isActive).map(toOption),
-    mortgageTypes:          (mortgageTypeQ.data?.items ?? []).filter((i) => i.isActive).map(toOption),
-    mortgagePaymentStatuses:(mortgagePaymentStatusQ.data?.items ?? []).filter((i) => i.isActive).map(toOption),
-    users:    (usersQ.data?.users ?? []).map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` })),
-    companies:(companiesQ.data?.companies ?? []).map((c) => ({ id: c.id, name: c.name })),
+    ownershipTypes: (ownershipQ.data?.items ?? []).filter((i) => i.isActive !== false).map(toOption),
+    propertyStatuses: (statusQ.data?.items ?? []).filter((i) => i.isActive !== false).map(toOption),
+    propertyPurposes: (purposeQ.data?.items ?? []).filter((i) => i.isActive !== false).map(toOption),
+    assetClasses: (assetClassQ.data?.items ?? []).filter((i) => i.isActive !== false).map(toOption),
+    mortgageTypes: (mortgageTypeQ.data?.items ?? []).filter((i) => i.isActive !== false).map(toOption),
+    mortgagePaymentStatuses: (mortgagePaymentStatusQ.data?.items ?? []).filter((i) => i.isActive !== false).map(toOption),
+    users: (usersQ.data?.users ?? []).map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`.trim() || u.email })),
+    companies: (companiesQ.data?.companies ?? []).map((c) => ({ id: c.id, name: c.name })),
     isLoading,
     isError,
   };

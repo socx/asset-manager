@@ -189,9 +189,9 @@ describe('RegisterAssetWizard', () => {
     fillStep2(); clickNext();
     clickNext(); // → shareholding
     fireEvent.click(screen.getByRole('button', { name: /add entry/i }));
+    fireEvent.change(screen.getByLabelText(/shareholder name 1/i), { target: { value: 'Owner 1' } });
     // Set ownership to 50 (not 100)
-    const percentInputs = screen.getAllByRole('spinbutton');
-    fireEvent.change(percentInputs[0], { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText(/ownership percent 1/i), { target: { value: '50' } });
     clickNext();
     expect(screen.getByText(/must equal 100/i)).toBeInTheDocument();
   });
@@ -219,6 +219,86 @@ describe('RegisterAssetWizard', () => {
     expect(payload['ownershipTypeId']).toBe('ot1');
     expect(payload['propertyPurposeId']).toBe('pp1');
     expect(payload['propertyStatusId']).toBe('ps1');
+  });
+
+  it('collects full shareholding, valuation, and mortgage fields into payload', async () => {
+    renderWizard();
+
+    fillStep1();
+    clickNext();
+    fillStep2();
+    clickNext();
+
+    // Purchase step
+    fireEvent.click(screen.getByRole('checkbox', { name: /property is financed/i }));
+    clickNext();
+
+    // Shareholding step
+    fireEvent.click(screen.getByRole('button', { name: /add entry/i }));
+    fireEvent.change(screen.getByLabelText(/shareholder name 1/i), { target: { value: 'Alice Smith' } });
+    fireEvent.change(screen.getByLabelText(/ownership percent 1/i), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText(/profit percent 1/i), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText(/shareholding notes 1/i), { target: { value: 'Joint owner' } });
+    clickNext();
+
+    // Valuation step
+    fireEvent.click(screen.getByRole('button', { name: /add entry/i }));
+    fireEvent.change(screen.getByLabelText(/valuation date 1/i), { target: { value: '2026-05-01' } });
+    fireEvent.change(screen.getByLabelText(/valuation amount 1/i), { target: { value: '550000' } });
+    fireEvent.change(screen.getByLabelText(/valuation method 1/i), { target: { value: 'Desktop' } });
+    fireEvent.change(screen.getByLabelText(/valued by 1/i), { target: { value: 'Surveyor Ltd' } });
+    fireEvent.change(screen.getByLabelText(/valuation notes 1/i), { target: { value: 'Annual review' } });
+    clickNext();
+
+    // Mortgage step
+    fireEvent.click(screen.getByRole('button', { name: /add entry/i }));
+    fireEvent.change(screen.getByLabelText(/lender 1/i), { target: { value: 'HSBC' } });
+    fireEvent.change(screen.getByLabelText(/product name 1/i), { target: { value: 'Fixed 5Y' } });
+    fireEvent.change(screen.getByLabelText(/mortgage type 1/i), { target: { value: 'mt1' } });
+    fireEvent.change(screen.getByLabelText(/payment status 1/i), { target: { value: 'mp1' } });
+    fireEvent.change(screen.getByLabelText(/loan amount 1/i), { target: { value: '300000' } });
+    fireEvent.change(screen.getByLabelText(/interest rate 1/i), { target: { value: '4.25' } });
+    fireEvent.change(screen.getByLabelText(/term years 1/i), { target: { value: '25' } });
+    fireEvent.change(screen.getByLabelText(/start date 1/i), { target: { value: '2026-06-01' } });
+    fireEvent.change(screen.getByLabelText(/settled at 1/i), { target: { value: '2031-06-01' } });
+    fireEvent.change(screen.getByLabelText(/mortgage notes 1/i), { target: { value: 'Primary mortgage' } });
+    clickNext();
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm & register/i }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    const payload = JSON.parse((init as RequestInit).body as string) as {
+      shareholdings: Array<{ shareholderName: string; ownershipPercent: number; profitPercent: number; notes?: string }>;
+      valuations: Array<{ valuationDate: string; valuationAmount: number; valuationMethod: string; valuedBy?: string; notes?: string }>;
+      mortgages: Array<{ lender: string; productName?: string; mortgageTypeId: string; loanAmount: number; interestRate?: number; termYears?: number; paymentStatusId: string; startDate: string; settledAt?: string; notes?: string }>;
+    };
+
+    expect(payload.shareholdings[0]).toMatchObject({
+      shareholderName: 'Alice Smith',
+      ownershipPercent: 100,
+      profitPercent: 100,
+      notes: 'Joint owner',
+    });
+    expect(payload.valuations[0]).toMatchObject({
+      valuationAmount: 550000,
+      valuationMethod: 'Desktop',
+      valuedBy: 'Surveyor Ltd',
+      notes: 'Annual review',
+    });
+    expect(payload.valuations[0].valuationDate).toContain('2026-05-01');
+    expect(payload.mortgages[0]).toMatchObject({
+      lender: 'HSBC',
+      productName: 'Fixed 5Y',
+      mortgageTypeId: 'mt1',
+      loanAmount: 300000,
+      interestRate: 4.25,
+      termYears: 25,
+      paymentStatusId: 'mp1',
+      notes: 'Primary mortgage',
+    });
+    expect(payload.mortgages[0].startDate).toContain('2026-06-01');
+    expect(payload.mortgages[0].settledAt).toContain('2031-06-01');
   });
 
   it('navigates to new asset detail page on success', async () => {

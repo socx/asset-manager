@@ -13,6 +13,7 @@ import {
   ChartBarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../hooks/useTheme';
@@ -154,6 +155,7 @@ const adminNav: Array<NavItem | NavGroup> = [
 
 const appNav: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: HomeIcon },
+  { label: 'Assets', to: '/assets', icon: BuildingOffice2Icon },
 ];
 
 function isGroup(item: NavItem | NavGroup): item is NavGroup {

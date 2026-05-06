@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { describe, it, expect } from 'vitest';
 import { requireAccessToken, parseMoney, parseNumber, formatCurrency } from '../utils';
 
@@ -9,9 +10,9 @@ describe('utils', () => {
 
     it('throws when token is null or undefined', () => {
       // pass null/undefined at runtime; TS casting is not necessary in test runtime
-      // @ts-expect-error an explicit test for runtime behavior when token is missing, even though types disallow it
+      // @ts-ignore an explicit test for runtime behavior when token is missing, even though types disallow it
       expect(() => requireAccessToken(null)).toThrow();
-      // @ts-expect-error an explicit test for runtime behavior when token is missing, even though types disallow it
+      // @ts-ignore an explicit test for runtime behavior when token is missing, even though types disallow it
       expect(() => requireAccessToken(undefined)).toThrow();
     });
   });

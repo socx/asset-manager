@@ -16,6 +16,9 @@ interface AuthState {
   setAuth: (user: AuthUser, accessToken: string) => void;
   clearAuth: () => void;
   setHasHydrated: (value: boolean) => void;
+  // Re-auth (token renewal) UI state
+  reauthVisible: boolean;
+  setReauthVisible: (v: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,9 +27,11 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       _hasHydrated: false,
+      reauthVisible: false,
       setAuth: (user, accessToken) => set({ user, accessToken }),
       clearAuth: () => set({ user: null, accessToken: null }),
       setHasHydrated: (value) => set({ _hasHydrated: value }),
+      setReauthVisible: (v: boolean) => set({ reauthVisible: v }),
     }),
     {
       name: 'auth-storage',

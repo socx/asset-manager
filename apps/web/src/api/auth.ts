@@ -27,6 +27,19 @@ export async function apiRequest<T>(path: string, init: RequestInit): Promise<T>
   const data = (await res.json()) as T | ApiError;
 
   if (!res.ok) {
+    // If the access token is invalid/expired, surface the re-auth modal so
+    // the user can re-enter their password to renew their session.
+    if (res.status === 401) {
+      try {
+        // Import the zustand store at runtime to avoid React hook usage here
+        // (we only need the setter function).
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { useAuthStore } = require('../store/authStore');
+        useAuthStore.getState().setReauthVisible(true);
+      } catch (e) {
+        // best-effort only
+      }
+    }
     const err = data as ApiError;
     throw new ApiResponseError(err.message ?? 'Request failed', res.status, err.code, err.errors);
   }

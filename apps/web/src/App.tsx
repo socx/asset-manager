@@ -22,6 +22,7 @@ import LookupListPage from './pages/admin/LookupListPage';
 import CompaniesPage from './pages/admin/CompaniesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
+import ReauthModal from './components/ReauthModal';
 import { useAuthBootstrap } from './hooks/useAuthBootstrap';
 
 const queryClient = new QueryClient({
@@ -201,6 +202,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppRoutes />
+      <ReauthModal />
     </QueryClientProvider>
   );
 }

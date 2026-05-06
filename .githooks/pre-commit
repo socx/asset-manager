@@ -1,0 +1,12 @@
+#!/bin/sh
+echo "Running lightweight pre-commit hook: lint-staged and type-check"
+if command -v npx >/dev/null 2>&1; then
+  npx --no-install lint-staged || npx lint-staged || (echo "lint-staged failed" && exit 1)
+else
+  echo "npx not found; skipping lint-staged"
+fi
+
+echo "Running type-check"
+npm run -s type-check || (echo "type-check failed" && exit 1)
+
+exit 0

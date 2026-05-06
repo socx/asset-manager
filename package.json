@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "dev": "concurrently --names \"api,web,worker\" --prefix-colors \"blue,green,yellow\" \"npm run dev -w apps/api\" \"npm run dev -w apps/web\" \"npm run dev -w apps/worker\"",
     "dev:secure": "npm run dev:secure -w apps/api",
     "build": "npm run build --workspaces --if-present",
@@ -20,6 +21,7 @@
     "db:generate": "npm run generate -w packages/db"
   },
   "devDependencies": {
+    "lint-staged": "^14.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "concurrently": "^9.1.2",

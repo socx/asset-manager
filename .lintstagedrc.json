@@ -1,0 +1,14 @@
+{
+  "apps/web/src/**/*.{ts,tsx}": [
+    "eslint --cache --fix",
+    "git add"
+  ],
+  "apps/*/src/**/*.{ts,tsx}": [
+    "eslint --cache --fix",
+    "git add"
+  ],
+  "packages/*/src/**/*.ts": [
+    "eslint --cache --fix",
+    "git add"
+  ]
+}

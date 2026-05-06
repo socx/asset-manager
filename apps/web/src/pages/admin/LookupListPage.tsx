@@ -55,7 +55,7 @@ function ItemRow({ item, onEdit, onToggle, onDelete, saving }: ItemRowProps) {
           {item.isActive ? 'Active' : 'Inactive'}
         </span>
       </td>
-      <td className="py-2.5 text-right">
+      <td className="py-2.5 px-4">
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={() => onEdit(item)}

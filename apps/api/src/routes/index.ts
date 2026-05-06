@@ -4,6 +4,7 @@ import { adminRouter } from './admin';
 import { telemetryRouter } from './telemetry';
 import { lookupRouter } from './lookup';
 import { companiesRouter } from './companies';
+import { assetsRouter } from './assets';
 
 export const router = Router();
 
@@ -21,3 +22,6 @@ router.use('/lookup', lookupRouter);
 
 // Companies (ITER-3-003) — public read for any authenticated user
 router.use('/companies', companiesRouter);
+
+// Property assets (ITER-4-002) — any authenticated user with scoped access
+router.use('/assets', assetsRouter);

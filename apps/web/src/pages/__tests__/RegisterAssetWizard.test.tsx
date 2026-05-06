@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import RegisterAssetWizard from '../RegisterAssetWizard';
 import * as wizardLookups from '../../hooks/useWizardLookups';
-import type { LookupOption } from '../../hooks/useWizardLookups';
 
 // ── Mock lookups ──────────────────────────────────────────────────────────────
 

@@ -198,7 +198,7 @@ function NavGroupItem({ group, onNavigate }: { group: NavGroup; onNavigate: () =
             <li key={child.to}>
               <NavLink
                 to={child.to}
-                end={child.to === '/admin'}
+                end={child.to !== '/admin/settings/lookup'}
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${

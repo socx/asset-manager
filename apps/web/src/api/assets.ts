@@ -65,3 +65,75 @@ export function listPropertyAssets(
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
+
+  // ── Wizard sub-entity payloads ─────────────────────────────────────────────
+
+  export interface CreateValuationPayload {
+    valuationDate: string;       // ISO datetime
+    valuationAmount: number;
+    valuationMethod: string;
+    valuedBy?: string;
+    notes?: string;
+  }
+
+  export interface CreateMortgagePayload {
+    lender: string;
+    productName?: string;
+    mortgageTypeId: string;
+    loanAmount: number;
+    interestRate?: number;
+    termYears?: number;
+    paymentStatusId: string;
+    startDate: string;           // ISO datetime
+    settledAt?: string;
+    notes?: string;
+  }
+
+  export interface CreateShareholdingPayload {
+    shareholderName: string;
+    ownershipPercent: number;
+    profitPercent: number;
+    notes?: string;
+  }
+
+  export interface CreatePropertyAssetPayload {
+    customAlias?: string;
+    assetClassId?: string;
+    ownerId?: string;
+    managedByUserId?: string | null;
+    managedByCompanyId?: string | null;
+    ownershipTypeId: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    county?: string;
+    postCode: string;
+    country: string;
+    propertyStatusId: string;
+    propertyPurposeId: string;
+    description?: string;
+    purchaseDate?: string;
+    purchasePrice?: number;
+    isFinanced?: boolean;
+    depositPaid?: number;
+    dutiesTaxes?: number;
+    legalFees?: number;
+    valuations?: CreateValuationPayload[];
+    mortgages?: CreateMortgagePayload[];
+    shareholdings?: CreateShareholdingPayload[];
+  }
+
+  export interface CreatePropertyAssetResponse {
+    asset: { id: string; code: string };
+  }
+
+  export function createPropertyAsset(
+    payload: CreatePropertyAssetPayload,
+    accessToken: string,
+  ): Promise<CreatePropertyAssetResponse> {
+    return apiRequest<CreatePropertyAssetResponse>('/assets/properties', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  }

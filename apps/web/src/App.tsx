@@ -12,6 +12,7 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
+import RegisterAssetWizard from './pages/RegisterAssetWizard';
 import DashboardPage from './pages/admin/DashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import SettingsPage from './pages/admin/SettingsPage';
@@ -167,6 +168,26 @@ function AppRoutes() {
             <ProtectedRoute roles={ADMIN_ROLES}>
               <AppShell title="System Logs">
                 <SystemLogsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assets/new"
+          element={
+            <ProtectedRoute>
+              <AppShell title="Register Asset">
+                <RegisterAssetWizard />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assets"
+          element={
+            <ProtectedRoute>
+              <AppShell title="Assets">
+                <AssetsPage />
               </AppShell>
             </ProtectedRoute>
           }

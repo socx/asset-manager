@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -131,17 +131,15 @@ export default function AssetsPage() {
   });
 
   // Debounce search
-  const debounceRef = useState<ReturnType<typeof setTimeout> | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
-    if (debounceRef[0]) clearTimeout(debounceRef[0]);
-    debounceRef[1](
-      setTimeout(() => {
-        setDebouncedQ(value);
-        setCursor(undefined);
-      }, 300),
-    );
-  }, [debounceRef]);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedQ(value);
+      setCursor(undefined);
+    }, 300);
+  }, []);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['assets', debouncedQ, cursor],
@@ -191,11 +189,9 @@ export default function AssetsPage() {
             </button>
           </div>
 
-          {/* Register button (placeholder) */}
           <button
-            disabled
-            title="Coming soon"
-            className="px-3 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white opacity-50 cursor-not-allowed"
+            onClick={() => navigate('/assets/new')}
+            className="px-3 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700"
           >
             Register New Asset
           </button>

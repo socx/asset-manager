@@ -803,4 +803,94 @@ describe('Property Assets API', () => {
       .send({ description: 'Updated repair' })
       .expect(404);
   });
-});
+
+    // ── Access-control: owner / non-owner / admin ─────────────────────────────
+
+    it('200 GET /api/v1/assets/properties/:id returns asset detail for the owner', async () => {
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+      mockPrisma.propertyAsset.findUnique.mockResolvedValue(makeDetailAsset());
+
+      const res = await request(app)
+        .get(`/api/v1/assets/properties/${ASSET_ID}`)
+        .set('Authorization', AUTH)
+        .expect(200);
+
+      expect(res.body.asset.id).toBe(ASSET_ID);
+    });
+
+    it('200 GET /api/v1/assets/properties/:id returns asset detail for an admin', async () => {
+      mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: ADMIN_ID, role: 'system_admin' }));
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+      mockPrisma.propertyAsset.findUnique.mockResolvedValue(makeDetailAsset());
+
+      const res = await request(app)
+        .get(`/api/v1/assets/properties/${ASSET_ID}`)
+        .set('Authorization', AUTH)
+        .expect(200);
+
+      expect(res.body.asset.id).toBe(ASSET_ID);
+    });
+
+    it('404 GET /api/v1/assets/properties/:id returns 404 for a non-participant', async () => {
+      mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: OTHER_ID, role: 'asset_owner' }));
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue(null);
+
+      await request(app)
+        .get(`/api/v1/assets/properties/${ASSET_ID}`)
+        .set('Authorization', AUTH)
+        .expect(404);
+    });
+
+    it('200 DELETE /api/v1/assets/properties/:id allows an admin to soft-delete', async () => {
+      mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: ADMIN_ID, role: 'super_admin' }));
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue({ id: ASSET_ID, ownerId: OWNER_ID });
+      mockPrisma.propertyAsset.update.mockResolvedValue({ id: ASSET_ID });
+
+      await request(app)
+        .delete(`/api/v1/assets/properties/${ASSET_ID}`)
+        .set('Authorization', AUTH)
+        .expect(200);
+
+      expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'property_asset.delete' }));
+    });
+
+    it('403 DELETE /api/v1/assets/properties/:id prevents a non-owner from deleting', async () => {
+      mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: OTHER_ID, role: 'asset_owner' }));
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue({ id: ASSET_ID, ownerId: OWNER_ID });
+
+      await request(app)
+        .delete(`/api/v1/assets/properties/${ASSET_ID}`)
+        .set('Authorization', AUTH)
+        .expect(403);
+    });
+
+    it('200 PATCH /api/v1/assets/properties/:id allows admin to reassign the owner', async () => {
+      mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: ADMIN_ID, role: 'system_admin' }));
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+      mockPrisma.propertyAsset.findUnique.mockResolvedValue({ customAlias: null, ownerId: OWNER_ID });
+      mockPrisma.propertyAsset.update.mockResolvedValue(makeDetailAsset({ ownerId: OTHER_ID }));
+
+      const res = await request(app)
+        .patch(`/api/v1/assets/properties/${ASSET_ID}`)
+        .set('Authorization', AUTH)
+        .send({ ownerId: OTHER_ID })
+        .expect(200);
+
+      expect(res.body.asset.ownerId).toBe(OTHER_ID);
+    });
+
+    it('404 POST /api/v1/assets/properties/:id/valuations returns 404 for a non-participant', async () => {
+      mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: OTHER_ID, role: 'asset_owner' }));
+      mockPrisma.propertyAsset.findFirst.mockResolvedValue(null);
+
+      await request(app)
+        .post(`/api/v1/assets/properties/${ASSET_ID}/valuations`)
+        .set('Authorization', AUTH)
+        .send({
+          valuationDate: '2026-05-02T00:00:00.000Z',
+          valuationAmount: 255000,
+          valuationMethod: 'Desktop',
+        })
+        .expect(404);
+    });
+  });

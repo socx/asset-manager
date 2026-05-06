@@ -260,7 +260,7 @@ export default function LookupListPage() {
   const saving = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div className="flex gap-6 h-full">
+    <div className="flex gap-6 h-full px-4 py-6">
       {/* Step-up auth */}
       {stepUpOpen && <StepUpModal onSuccess={onStepUpSuccess} onCancel={() => setStepUpOpen(false)} />}
 

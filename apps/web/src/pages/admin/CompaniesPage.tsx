@@ -211,8 +211,7 @@ export default function CompaniesPage() {
     <div className="max-w-7xl mx-auto px-4 py-6">
       {stepUpOpen && <StepUpModal onSuccess={onStepUpSuccess} onCancel={() => setStepUpOpen(false)} />}
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Companies</h2>
+      <div className="flex items-center justify-end mb-4">
         <button
           onClick={() => withStepUp(() => { setMutationError(null); setShowCreate(true); })}
           className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700"

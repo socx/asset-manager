@@ -183,12 +183,12 @@ export default function SystemLogsPage() {
     <>
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Filter bar */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 dark:bg-gray-900 dark:border-gray-800">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             <select
               value={filters.level}
               onChange={(e) => setFilters((f) => ({ ...f, level: e.target.value as LogLevel | '' }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="">All levels</option>
               {LEVELS.map((l) => (
@@ -201,7 +201,7 @@ export default function SystemLogsPage() {
               placeholder="Service"
               value={filters.service}
               onChange={(e) => setFilters((f) => ({ ...f, service: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <input
@@ -209,33 +209,33 @@ export default function SystemLogsPage() {
               placeholder="Trace ID"
               value={filters.traceId}
               onChange={(e) => setFilters((f) => ({ ...f, traceId: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <input
               type="date"
               value={filters.dateFrom}
               onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <input
               type="date"
               value={filters.dateTo}
               onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <div className="flex gap-2">
               <button
                 onClick={applyFilters}
-                className="flex-1 bg-indigo-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-indigo-700"
+                className="w-full rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
               >
                 Apply
               </button>
               <button
                 onClick={resetFilters}
-                className="flex-1 border border-gray-300 text-gray-600 rounded px-3 py-1.5 text-sm hover:bg-gray-50"
+                className="flex-1 border border-gray-300 text-gray-600 rounded px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
               >
                 Reset
               </button>
@@ -262,7 +262,7 @@ export default function SystemLogsPage() {
         )}
 
         {/* Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto">
           {error && !(error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') && (
             <p className="text-center py-10 text-red-500 text-sm">Failed to load system logs.</p>
           )}
@@ -273,41 +273,41 @@ export default function SystemLogsPage() {
 
           {allLogs.length > 0 && (
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                 <tr>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Time</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Level</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Service</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Message</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Trace ID</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide whitespace-nowrap">Time</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Level</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Service</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Message</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Trace ID</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {allLogs.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                     onClick={() => setSelected(log)}
                   >
-                    <td className="py-2.5 px-4 text-gray-600 whitespace-nowrap font-mono text-xs">
+                    <td className="py-2.5 px-4 text-gray-600 dark:text-white whitespace-nowrap font-mono text-xs">
                       {formatDate(log.createdAt)}
                     </td>
                     <td className="py-2.5 px-4">
                       <LevelBadge level={log.level} />
                     </td>
-                    <td className="py-2.5 px-4 text-gray-600 font-mono text-xs">{log.service}</td>
-                    <td className="py-2.5 px-4 text-gray-800 max-w-xs truncate">{log.message}</td>
+                    <td className="py-2.5 px-4 text-gray-600 dark:text-white font-mono text-xs">{log.service}</td>
+                    <td className="py-2.5 px-4 text-gray-800 dark:text-white max-w-xs truncate">{log.message}</td>
                     <td className="py-2.5 px-4">
                       {log.traceId ? (
                         <button
                           onClick={(e) => { e.stopPropagation(); drillDownTrace(log.traceId as string); }}
-                          className="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
+                          className="font-mono text-xs text-sky-600 hover:text-sky-800 hover:underline"
                           title="Filter by this trace ID"
                         >
                           {log.traceId.slice(0, 8)}…
                         </button>
                       ) : (
-                        <span className="text-gray-400 text-xs">—</span>
+                        <span className="text-gray-400 dark:text-gray-500 text-xs">—</span>
                       )}
                     </td>
                   </tr>
@@ -317,7 +317,7 @@ export default function SystemLogsPage() {
           )}
 
           {isFetching && (
-            <p className="text-center py-4 text-gray-400 text-sm">Loading…</p>
+            <p className="text-center py-4 text-gray-400 dark:text-gray-500 text-sm">Loading…</p>
           )}
         </div>
 
@@ -326,7 +326,7 @@ export default function SystemLogsPage() {
           <div className="mt-4 text-center">
             <button
               onClick={() => setCursor(data.nextCursor ?? undefined)}
-              className="text-sm bg-white border border-gray-300 text-gray-700 rounded px-4 py-2 hover:bg-gray-50"
+              className="text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Load more
             </button>

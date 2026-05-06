@@ -40,27 +40,27 @@ interface ItemRowProps {
 
 function ItemRow({ item, onEdit, onToggle, onDelete, saving }: ItemRowProps) {
   return (
-    <tr className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <td className="py-3 pr-4 text-sm text-gray-900 dark:text-white w-8 tabular-nums text-right">
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
+      <td className="py-2.5 pr-4 text-sm text-gray-600 dark:text-white w-8 tabular-nums text-right">
         {item.sortOrder}
       </td>
-      <td className="py-3 pr-4 text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
-      <td className="py-3 pr-4 text-sm text-gray-500 dark:text-gray-400">{item.description ?? '—'}</td>
-      <td className="py-3 pr-4">
+      <td className="py-2.5 pr-4 text-sm font-medium text-gray-600 dark:text-white">{item.name}</td>
+      <td className="py-2.5 pr-4 text-sm text-gray-500 dark:text-white">{item.description ?? '—'}</td>
+      <td className="py-2.5 pr-4">
         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
           item.isActive
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+            ? 'bg-green-100 text-green-800 dark:bg-green-600/30 dark:text-green-300'
             : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
         }`}>
           {item.isActive ? 'Active' : 'Inactive'}
         </span>
       </td>
-      <td className="py-3 text-right">
+      <td className="py-2.5 text-right">
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={() => onEdit(item)}
             disabled={saving}
-            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50"
+            className="text-xs text-sky-600 dark:text-sky-400 hover:underline disabled:opacity-50"
           >
             Edit
           </button>
@@ -124,7 +124,7 @@ function ItemForm({ initialName = '', initialDescription = '', initialSortOrder,
               onChange={(e) => setName(e.target.value)}
               required
               maxLength={100}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
           <div>
@@ -133,7 +133,7 @@ function ItemForm({ initialName = '', initialDescription = '', initialSortOrder,
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={255}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
           <div>
@@ -144,14 +144,14 @@ function ItemForm({ initialName = '', initialDescription = '', initialSortOrder,
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               placeholder="Auto"
-              className="w-32 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-32 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
           <div className="flex gap-2 pt-2">
             <button
               type="submit"
               disabled={saving || !name.trim()}
-              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50"
+              className="flex-1 bg-sky-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-sky-700 disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -267,7 +267,7 @@ export default function LookupListPage() {
               className={({ isActive }) =>
                 `block rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive
-                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
+                    ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 font-medium'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`
               }
@@ -284,7 +284,7 @@ export default function LookupListPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{activeLabel}</h2>
           <button
             onClick={() => withStepUp(() => { setMutationError(null); setShowCreate(true); })}
-            className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700"
+            className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700"
           >
             + Add item
           </button>
@@ -299,18 +299,18 @@ export default function LookupListPage() {
         {isLoading ? (
           <p className="text-sm text-gray-500">Loading…</p>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <th className="px-0 py-3 pr-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide w-8">#</th>
-                  <th className="py-3 pr-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</th>
-                  <th className="py-3 pr-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Description</th>
-                  <th className="py-3 pr-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
-                  <th className="py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide whitespace-nowrap">#</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Description</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Status</th>
+                  <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {(data?.items ?? []).map((item) => (
                   <ItemRow
                     key={item.id}

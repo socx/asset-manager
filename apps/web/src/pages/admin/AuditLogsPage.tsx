@@ -200,12 +200,12 @@ export default function AuditLogsPage() {
     <>
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Filter bar */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 dark:bg-gray-900 dark:border-gray-800">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             <select
               value={filters.action}
               onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="">All actions</option>
               {KNOWN_ACTIONS.map((a) => (
@@ -216,7 +216,7 @@ export default function AuditLogsPage() {
             <select
               value={filters.entityType}
               onChange={(e) => setFilters((f) => ({ ...f, entityType: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="">All entity types</option>
               {KNOWN_ENTITY_TYPES.map((t) => (
@@ -229,33 +229,33 @@ export default function AuditLogsPage() {
               placeholder="Actor ID"
               value={filters.actorId}
               onChange={(e) => setFilters((f) => ({ ...f, actorId: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <input
               type="date"
               value={filters.dateFrom}
               onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <input
               type="date"
               value={filters.dateTo}
               onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
 
             <div className="flex gap-2">
               <button
                 onClick={applyFilters}
-                className="flex-1 bg-indigo-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-indigo-700"
+                className="w-full rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
               >
                 Apply
               </button>
               <button
                 onClick={resetFilters}
-                className="flex-1 border border-gray-300 text-gray-600 rounded px-3 py-1.5 text-sm hover:bg-gray-50"
+                className="flex-1 border border-gray-300 text-gray-600 rounded px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
               >
                 Reset
               </button>
@@ -271,7 +271,7 @@ export default function AuditLogsPage() {
           {allLogs.length > 0 && (
             <button
               onClick={() => exportToCsv(allLogs)}
-              className="text-sm border border-gray-300 text-gray-700 rounded px-3 py-1.5 hover:bg-gray-50 flex items-center gap-1.5"
+              className="text-sm border bg-sky-600 border-gray-300 text-white rounded px-3 py-1.5 hover:bg-sky-700 flex items-center gap-1.5"
             >
               ↓ Export CSV
             </button>
@@ -283,7 +283,7 @@ export default function AuditLogsPage() {
         )}
 
         {/* Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto">
           {error && !(error instanceof ApiResponseError && error.code === 'STEP_UP_REQUIRED') && (
             <p className="text-center py-10 text-red-500 text-sm">Failed to load audit logs.</p>
           )}
@@ -294,33 +294,33 @@ export default function AuditLogsPage() {
 
           {allLogs.length > 0 && (
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Time</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actor Role</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Entity Type</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Entity ID</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">IP</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide whitespace-nowrap">Time</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Actor Role</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Action</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Entity Type</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Entity ID</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">IP</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {allLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="py-2.5 px-4 text-gray-600 whitespace-nowrap font-mono text-xs">
+                  <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="py-2.5 px-4 text-gray-600 whitespace-nowrap font-mono text-xs text-gray-500 dark:text-white">
                       {formatDate(log.createdAt)}
                     </td>
-                    <td className="py-2.5 px-4 text-gray-700 capitalize text-xs">
+                    <td className="py-2.5 px-4 text-gray-700 capitalize text-xs text-gray-500 dark:text-white">
                       {log.actorRole?.replace(/_/g, ' ') ?? '—'}
                     </td>
                     <td className="py-2.5 px-4">
                       <ActionBadge action={log.action} />
                     </td>
-                    <td className="py-2.5 px-4 text-gray-600 text-xs">{log.entityType}</td>
-                    <td className="py-2.5 px-4 text-gray-500 font-mono text-xs truncate max-w-[140px]">
+                    <td className="py-2.5 px-4 text-gray-600 text-xs text-gray-500 dark:text-white">{log.entityType}</td>
+                    <td className="py-2.5 px-4 text-gray-500 font-mono text-xs text-gray-500 dark:text-white truncate max-w-[140px]">
                       {log.entityId ?? '—'}
                     </td>
-                    <td className="py-2.5 px-4 text-gray-500 font-mono text-xs whitespace-nowrap">
+                    <td className="py-2.5 px-4 text-gray-500 font-mono text-xs text-gray-500 dark:text-white whitespace-nowrap">
                       {log.ipAddress ?? '—'}
                     </td>
                   </tr>

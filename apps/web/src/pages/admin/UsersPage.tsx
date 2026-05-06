@@ -397,7 +397,7 @@ export default function UsersPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           <button
@@ -438,55 +438,55 @@ export default function UsersPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto">
           {isLoading ? (
-            <div className="py-16 text-center text-sm text-gray-400">Loading users…</div>
+            <div className="py-16 text-center text-sm text-gray-400 dark:text-white">Loading users…</div>
           ) : isError ? (
             <div className="py-16 text-center text-sm text-red-500">Failed to load users.</div>
           ) : !data?.users?.length ? (
-            <div className="py-16 text-center text-sm text-gray-400">No users found.</div>
+            <div className="py-16 text-center text-sm text-gray-400 dark:text-white">No users found.</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-4 py-3">Name</th>
-                  <th className="text-left px-4 py-3">Email</th>
-                  <th className="text-left px-4 py-3">Role</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Created</th>
-                  <th className="text-left px-4 py-3">Last Login</th>
-                  <th className="px-4 py-3" />
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Email</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Role</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Status</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Created</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Last Login</th>
+                  <th className="py-3 px-4" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {data.users.map((user) => {
-                  const statusInfo = STATUS_LABELS[user.status] ?? { label: user.status, cls: 'bg-gray-100 text-gray-700' };
+                  const statusInfo = STATUS_LABELS[user.status] ?? { label: user.status, cls: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-white' };
                   const isCurrentUser = user.id === currentUser?.id;
                   return (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">
+                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="py-2.5 px-4 font-medium text-gray-900 dark:text-white">
                         {user.firstName} {user.lastName}
-                        {isCurrentUser && <span className="ml-1 text-xs text-gray-400">(you)</span>}
+                        {isCurrentUser && <span className="ml-1 text-xs text-gray-400 dark:text-white">(you)</span>}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{user.email}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                        <td className="py-2.5 px-4 text-gray-600 dark:text-white">{user.email}</td>
+                        <td className="py-2.5 px-4">
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-white">
                           {roleLabel(user.role)}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusInfo.cls}`}>
+                        <td className="py-2.5 px-4">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusInfo.cls}`}>
                           {statusInfo.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(user.createdAt)}</td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(user.lastLoginAt)}</td>
-                      <td className="px-4 py-3">
+                        <td className="py-2.5 px-4 text-gray-500 dark:text-white">{formatDate(user.createdAt)}</td>
+                        <td className="py-2.5 px-4 text-gray-500 dark:text-white">{formatDate(user.lastLoginAt)}</td>
+                        <td className="py-2.5 px-4">
                         <div className="flex items-center gap-2 justify-end">
                           {/* Sessions */}
                           <button
                             onClick={() => setSessionsUser(user)}
-                            className="text-xs text-gray-500 hover:text-gray-800 font-medium"
+                            className="text-xs text-gray-500 dark:text-white hover:text-gray-800 dark:hover:text-white font-medium"
                             title="View sessions"
                           >
                             Sessions
@@ -495,7 +495,7 @@ export default function UsersPage() {
                           {/* Edit */}
                           <button
                             onClick={() => { setFormServerError(''); setEditingUser(user); }}
-                            className="text-xs text-sky-600 hover:text-sky-800 font-medium"
+                            className="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-600 font-medium"
                           >
                             Edit
                           </button>
@@ -510,7 +510,7 @@ export default function UsersPage() {
                                 })
                               }
                               disabled={statusMutation.isPending}
-                              className={`text-xs font-medium ${user.status === 'active' ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'}`}
+                              className={`text-xs font-medium ${user.status === 'active' ? 'text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-600' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-600'}`}
                             >
                               {user.status === 'active' ? 'Disable' : 'Enable'}
                             </button>
@@ -521,7 +521,7 @@ export default function UsersPage() {
                             <button
                               onClick={() => mfaResetMutation.mutate(user.id)}
                               disabled={mfaResetMutation.isPending}
-                              className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                              className="text-xs text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-600 font-medium"
                               title="Reset MFA"
                             >
                               MFA↺
@@ -532,7 +532,7 @@ export default function UsersPage() {
                           {!isCurrentUser && (
                             <button
                               onClick={() => setDeletingUser(user)}
-                              className="text-xs text-red-600 hover:text-red-800 font-medium"
+                              className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-600 font-medium"
                             >
                               Delete
                             </button>

@@ -33,19 +33,19 @@ function SettingRow({ setting, onSave, saving }: SettingRowProps) {
   }
 
   return (
-    <tr className="border-b border-gray-100 last:border-0">
-      <td className="py-4 pr-4 w-64">
-        <p className="font-mono text-sm font-medium text-gray-900">{setting.key}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{setting.description}</p>
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
+      <td className="py-2.5 px-4 w-64">
+        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">{setting.key}</p>
+        <p className="text-xs text-gray-500 dark:text-white mt-0.5">{setting.description}</p>
       </td>
-      <td className="py-4 pr-4 text-sm text-gray-500 capitalize">{setting.type}</td>
-      <td className="py-4 pr-4 min-w-[160px]">
+      <td className="py-2.5 px-4 text-sm text-gray-500 dark:text-white capitalize">{setting.type}</td>
+      <td className="py-2.5 px-4 min-w-[160px]">
         {editing ? (
           setting.type === 'boolean' ? (
             <select
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               <option value="true">true</option>
               <option value="false">false</option>
@@ -56,20 +56,20 @@ function SettingRow({ setting, onSave, saving }: SettingRowProps) {
               min={1}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           )
         ) : (
-          <span className="font-mono text-sm">{setting.value}</span>
+          <span className="font-mono text-sm dark:text-white">{setting.value}</span>
         )}
       </td>
-      <td className="py-4 text-right">
+      <td className="py-2.5 px-4 text-right">
         {editing ? (
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 disabled:opacity-50"
+              className="text-sm bg-sky-600 text-white px-3 py-1 rounded hover:bg-sky-700 disabled:opacity-50"
             >
               Save
             </button>
@@ -83,7 +83,7 @@ function SettingRow({ setting, onSave, saving }: SettingRowProps) {
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-sm text-indigo-600 hover:text-indigo-800"
+            className="text-sm text-sky-600 hover:text-sky-800"
           >
             Edit
           </button>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto">
           {isLoading && (
             <p className="text-center py-12 text-gray-500">Loading settings…</p>
           )}
@@ -179,16 +179,16 @@ export default function SettingsPage() {
           )}
 
           {data && (
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                 <tr>
-                  <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Key</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Value</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Action</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Key</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Type</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide">Value</th>
+                  <th className="py-3 px-4 text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wide text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {data.settings.map((setting) => (
                   <SettingRow
                     key={setting.key}

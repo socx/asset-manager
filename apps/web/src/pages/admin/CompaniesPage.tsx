@@ -48,7 +48,7 @@ function CompanyForm({ initial, companyTypes, onSubmit, onCancel, saving, error 
     });
   }
 
-  const field = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500';
+  const field = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500';
   const label = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1';
 
   return (
@@ -102,7 +102,8 @@ function CompanyForm({ initial, companyTypes, onSubmit, onCancel, saving, error 
             <button
               type="submit"
               disabled={saving || !name.trim()}
-              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50"
+              className="flex-1 bg-sky-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-sky-700 disabled:opacity-50"
+              
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -207,14 +208,14 @@ export default function CompaniesPage() {
   const saving = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 py-6">
       {stepUpOpen && <StepUpModal onSuccess={onStepUpSuccess} onCancel={() => setStepUpOpen(false)} />}
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Companies</h2>
         <button
           onClick={() => withStepUp(() => { setMutationError(null); setShowCreate(true); })}
-          className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700"
+          className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700"
         >
           + New company
         </button>
@@ -226,7 +227,7 @@ export default function CompaniesPage() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search by name…"
-          className="w-full max-w-xs border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full max-w-xs border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
         />
       </div>
 
@@ -239,26 +240,26 @@ export default function CompaniesPage() {
       {isLoading ? (
         <p className="text-sm text-gray-500">Loading…</p>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">City</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Country</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+              <tr>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Type</th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">City</th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Country</th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
+                <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {(data?.companies ?? []).map((company) => (
-                <tr key={company.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{company.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{company.companyType?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{company.city ?? '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{company.country ?? '—'}</td>
-                  <td className="px-4 py-3">
+                <tr key={company.id} className="last:border-0">
+                  <td className="py-2.5 px-4 text-sm font-medium text-gray-900 dark:text-white">{company.name}</td>
+                  <td className="py-2.5 px-4 text-sm text-gray-500 dark:text-gray-400">{company.companyType?.name ?? '—'}</td>
+                  <td className="py-2.5 px-4 text-sm text-gray-500 dark:text-gray-400">{company.city ?? '—'}</td>
+                  <td className="py-2.5 px-4 text-sm text-gray-500 dark:text-gray-400">{company.country ?? '—'}</td>
+                  <td className="py-2.5 px-4">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                       company.isActive
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
@@ -267,12 +268,12 @@ export default function CompaniesPage() {
                       {company.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="py-2.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => withStepUp(() => { setMutationError(null); setEditCompany(company); })}
                         disabled={saving}
-                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50"
+                        className="text-xs text-sky-600 dark:text-sky-400 hover:underline disabled:opacity-50"
                       >
                         Edit
                       </button>

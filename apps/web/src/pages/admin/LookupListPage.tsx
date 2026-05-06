@@ -177,6 +177,13 @@ export default function LookupListPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const queryClient = useQueryClient();
 
+  function requireAccessToken(): string {
+    if (!accessToken) {
+      throw new Error('Authentication required');
+    }
+    return accessToken;
+  }
+
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [editItem, setEditItem] = useState<LookupItem | null>(null);
@@ -194,7 +201,7 @@ export default function LookupListPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'lookup', activeType],
-    queryFn: () => listAdminLookupItems(activeType, accessToken!),
+    queryFn: () => listAdminLookupItems(activeType, requireAccessToken()),
     enabled: !!accessToken,
   });
 
@@ -213,7 +220,7 @@ export default function LookupListPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: { name: string; description?: string; sortOrder?: number }) =>
-      createLookupItem(activeType, payload, accessToken!),
+      createLookupItem(activeType, payload, requireAccessToken()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lookup', activeType] });
       setShowCreate(false);
@@ -226,7 +233,7 @@ export default function LookupListPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateLookupItem>[1] }) =>
-      updateLookupItem(id, payload, accessToken!),
+      updateLookupItem(id, payload, requireAccessToken()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lookup', activeType] });
       setEditItem(null);
@@ -238,7 +245,7 @@ export default function LookupListPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteLookupItem(id, accessToken!),
+    mutationFn: (id: string) => deleteLookupItem(id, requireAccessToken()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lookup', activeType] });
       setDeleteConfirm(null);

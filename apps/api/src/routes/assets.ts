@@ -102,6 +102,15 @@ function isAdmin(role: string): boolean {
   return ADMIN_ROLES.has(role);
 }
 
+function requireActor(req: AuthenticatedRequest, res: Response) {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ message: 'Authentication required.' });
+    return null;
+  }
+  return user;
+}
+
 function canViewAsset(userId: string, role: string, ownerId: string, managedByUserId: string | null): boolean {
   return isAdmin(role) || ownerId === userId || managedByUserId === userId;
 }
@@ -156,8 +165,11 @@ async function getNextPropertyCode(tx: Prisma.TransactionClient): Promise<string
 }
 
 async function findAccessibleAsset(assetId: string, req: AuthenticatedRequest) {
-  const userId = req.user!.sub;
-  const role = req.user!.role;
+  const userId = req.user?.sub;
+  const role = req.user?.role;
+  if (!userId || !role) {
+    return null;
+  }
 
   const asset = await prisma.propertyAsset.findFirst({
     where: {
@@ -177,8 +189,11 @@ async function findAccessibleAsset(assetId: string, req: AuthenticatedRequest) {
 
 // List property assets
 assetsRouter.get('/properties', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const userId = req.user!.sub;
-  const role = req.user!.role;
+  const actor = requireActor(req, res);
+  if (!actor) return;
+
+  const userId = actor.sub;
+  const role = actor.role;
   const cursor = typeof req.query['cursor'] === 'string' ? req.query['cursor'] : undefined;
   const limit = Math.min(Number(req.query['limit']) || 20, 100);
   const q = typeof req.query['q'] === 'string' ? req.query['q'].trim() : '';
@@ -227,8 +242,11 @@ assetsRouter.get('/properties', async (req: AuthenticatedRequest, res: Response)
 // Create property asset
 assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const body = req.body as CreatePropertyAssetInput;
-  const userId = req.user!.sub;
-  const role = req.user!.role;
+  const actor = requireActor(req, res);
+  if (!actor) return;
+
+  const userId = actor.sub;
+  const role = actor.role;
 
   if (body.managedByUserId && body.managedByCompanyId) {
     res.status(400).json({ message: 'Only one manager type is allowed: user or company' });
@@ -301,10 +319,12 @@ assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req
         throw new Error('Failed to generate unique property code');
       }
 
+      const createdAssetId = createdAsset.id;
+
       if (body.valuations?.length) {
         await tx.valuationEntry.createMany({
           data: body.valuations.map((v) => ({
-            assetId: createdAsset!.id,
+            assetId: createdAssetId,
             valuationDate: new Date(v.valuationDate),
             valuationAmount: new Prisma.Decimal(v.valuationAmount),
             valuationMethod: v.valuationMethod,
@@ -317,7 +337,7 @@ assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req
       if (body.mortgages?.length) {
         await tx.mortgageEntry.createMany({
           data: body.mortgages.map((m) => ({
-            assetId: createdAsset!.id,
+            assetId: createdAssetId,
             lender: m.lender,
             productName: m.productName ?? null,
             mortgageTypeId: m.mortgageTypeId,
@@ -335,7 +355,7 @@ assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req
       if (body.shareholdings?.length) {
         await tx.shareholdingEntry.createMany({
           data: body.shareholdings.map((s) => ({
-            assetId: createdAsset!.id,
+            assetId: createdAssetId,
             shareholderName: s.shareholderName,
             ownershipPercent: new Prisma.Decimal(s.ownershipPercent),
             profitPercent: new Prisma.Decimal(s.profitPercent),
@@ -347,7 +367,7 @@ assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req
       if (body.transactions?.length) {
         await tx.transactionEntry.createMany({
           data: body.transactions.map((t) => ({
-            assetId: createdAsset!.id,
+            assetId: createdAssetId,
             date: new Date(t.date),
             description: t.description,
             amount: new Prisma.Decimal(t.amount),
@@ -356,7 +376,7 @@ assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req
         });
       }
 
-      return tx.propertyAsset.findUnique({ where: { id: createdAsset.id }, select: PROPERTY_DETAIL_SELECT });
+      return tx.propertyAsset.findUnique({ where: { id: createdAssetId }, select: PROPERTY_DETAIL_SELECT });
     });
 
     await createAuditLog({
@@ -382,8 +402,11 @@ assetsRouter.post('/properties', validate(createPropertyAssetSchema), async (req
 // Property detail
 assetsRouter.get('/properties/:id', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const id = req.params.id as string;
-  const userId = req.user!.sub;
-  const role = req.user!.role;
+  const actor = requireActor(req, res);
+  if (!actor) return;
+
+  const userId = actor.sub;
+  const role = actor.role;
 
   try {
     const asset = await prisma.propertyAsset.findFirst({
@@ -415,8 +438,11 @@ assetsRouter.get('/properties/:id', async (req: AuthenticatedRequest, res: Respo
 assetsRouter.patch('/properties/:id', validate(updatePropertyAssetSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const id = req.params.id as string;
   const body = req.body as UpdatePropertyAssetInput;
-  const userId = req.user!.sub;
-  const role = req.user!.role;
+  const actor = requireActor(req, res);
+  if (!actor) return;
+
+  const userId = actor.sub;
+  const role = actor.role;
 
   if (body.managedByUserId && body.managedByCompanyId) {
     res.status(400).json({ message: 'Only one manager type is allowed: user or company' });
@@ -502,8 +528,11 @@ assetsRouter.patch('/properties/:id', validate(updatePropertyAssetSchema), async
 // Soft-delete property
 assetsRouter.delete('/properties/:id', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const id = req.params.id as string;
-  const userId = req.user!.sub;
-  const role = req.user!.role;
+  const actor = requireActor(req, res);
+  if (!actor) return;
+
+  const userId = actor.sub;
+  const role = actor.role;
 
   try {
     const existing = await prisma.propertyAsset.findFirst({ where: { id, deletedAt: null }, select: { id: true, ownerId: true } });

@@ -22,11 +22,15 @@ const WORKER_HEARTBEAT_KEY = 'worker:heartbeat';
 const WORKER_HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
 const WORKER_HEARTBEAT_EX_SECONDS = 90; // expire after 90 seconds
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 async function refreshHeartbeat() {
   try {
     await connection.set(WORKER_HEARTBEAT_KEY, String(Date.now()), 'EX', WORKER_HEARTBEAT_EX_SECONDS);
-  } catch (err: any) {
-    console.error('[worker] Failed to set heartbeat:', err?.message ?? err);
+  } catch (err: unknown) {
+    console.error('[worker] Failed to set heartbeat:', getErrorMessage(err));
   }
 }
 
@@ -35,8 +39,8 @@ refreshHeartbeat().catch(() => {});
 heartbeatTimer = setInterval(() => void refreshHeartbeat(), WORKER_HEARTBEAT_INTERVAL_MS);
 
 // Ensure the heartbeat timer does not keep the Node.js event loop alive
-if (heartbeatTimer && typeof (heartbeatTimer as any).unref === 'function') {
-  (heartbeatTimer as any).unref();
+if (heartbeatTimer) {
+  heartbeatTimer.unref();
 }
 
 const transport = nodemailer.createTransport({
@@ -171,23 +175,25 @@ const shutdown = async (signal: string) => {
   // best-effort: remove heartbeat key so API shows offline immediately
   try {
     await connection.del(WORKER_HEARTBEAT_KEY);
-  } catch {}
+  } catch {
+    // Ignore heartbeat cleanup failures during shutdown.
+  }
 
   // Close email worker and Redis connection before exiting
   try {
     await emailWorker.close();
-  } catch (err) {
-    console.error('[worker] Failed to close email worker:', (err as any)?.message ?? err);
+  } catch (err: unknown) {
+    console.error('[worker] Failed to close email worker:', getErrorMessage(err));
   }
 
   try {
     await connection.quit();
-  } catch (err) {
-    console.error('[worker] Failed to quit Redis connection:', (err as any)?.message ?? err);
+  } catch (err: unknown) {
+    console.error('[worker] Failed to quit Redis connection:', getErrorMessage(err));
   }
 
   process.exit(0);
 };
 
-process.on('SIGTERM', (sig) => void shutdown('SIGTERM'));
-process.on('SIGINT', (sig) => void shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));

@@ -176,7 +176,7 @@ describe('Property Assets API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockVerifyAccessToken.mockReturnValue(makeTokenPayload());
-    mockPrisma.$transaction.mockImplementation(async (callback: any) => {
+    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => {
       if (typeof callback === 'function') {
         const tx = {
           $queryRaw: jest.fn().mockResolvedValue([{ code: 'PROP-00009' }]),
@@ -618,7 +618,7 @@ describe('Property Assets API', () => {
 
   it('201 POST /api/v1/assets/properties/:id/shareholdings creates a shareholding entry', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
-    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
       shareholdingEntry: {
         create: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID, shareholderName: 'Owner 3' }),
         aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 100 } }),
@@ -640,7 +640,7 @@ describe('Property Assets API', () => {
 
   it('400 POST /api/v1/assets/properties/:id/shareholdings rejects creation when ownership total exceeds 100', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
-    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
       shareholdingEntry: {
         create: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID }),
         aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 110 } }),
@@ -661,7 +661,7 @@ describe('Property Assets API', () => {
   it('200 PATCH /api/v1/assets/properties/:id/shareholdings/:entryId updates a shareholding entry when the total remains valid', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
     mockPrisma.shareholdingEntry.findFirst.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID });
-    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
       shareholdingEntry: {
         update: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID, shareholderName: 'Updated Owner' }),
         aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 100 } }),
@@ -691,7 +691,7 @@ describe('Property Assets API', () => {
   it('400 PATCH /api/v1/assets/properties/:id/shareholdings/:entryId rejects updates that push ownership above 100', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
     mockPrisma.shareholdingEntry.findFirst.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID });
-    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
       shareholdingEntry: {
         update: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID }),
         aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 110 } }),

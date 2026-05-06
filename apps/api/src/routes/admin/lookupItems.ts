@@ -5,6 +5,15 @@ import { createAuditLog } from '../../lib/audit';
 import { logger } from '../../lib/logger';
 import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 
+function requireActor(req: AuthenticatedRequest, res: Response) {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ message: 'Authentication required.' });
+    return null;
+  }
+  return user;
+}
+
 // ── List all items for a type (including inactive) ────────────────────────────
 
 export async function listLookupItemsHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -38,6 +47,8 @@ export async function createLookupItemHandler(req: AuthenticatedRequest, res: Re
   }
 
   const body = req.body as CreateLookupItemInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     // Auto-assign sort order if not provided: max + 1 within this type
@@ -60,8 +71,8 @@ export async function createLookupItemHandler(req: AuthenticatedRequest, res: Re
     });
 
     await createAuditLog({
-      actorId: req.user!.sub,
-      actorRole: req.user!.role,
+      actorId: actor.sub,
+      actorRole: actor.role,
       action: 'lookup_item.create',
       entityType: 'LookupItem',
       entityId: item.id,
@@ -87,6 +98,8 @@ export async function createLookupItemHandler(req: AuthenticatedRequest, res: Re
 export async function updateLookupItemHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const id = req.params.id as string;
   const body = req.body as UpdateLookupItemInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const existing = await prisma.lookupItem.findUnique({ where: { id } });
@@ -106,8 +119,8 @@ export async function updateLookupItemHandler(req: AuthenticatedRequest, res: Re
     });
 
     await createAuditLog({
-      actorId: req.user!.sub,
-      actorRole: req.user!.role,
+      actorId: actor.sub,
+      actorRole: actor.role,
       action: 'lookup_item.update',
       entityType: 'LookupItem',
       entityId: item.id,
@@ -133,6 +146,8 @@ export async function updateLookupItemHandler(req: AuthenticatedRequest, res: Re
 
 export async function deleteLookupItemHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const id = req.params.id as string;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const existing = await prisma.lookupItem.findUnique({
@@ -155,8 +170,8 @@ export async function deleteLookupItemHandler(req: AuthenticatedRequest, res: Re
     await prisma.lookupItem.delete({ where: { id } });
 
     await createAuditLog({
-      actorId: req.user!.sub,
-      actorRole: req.user!.role,
+      actorId: actor.sub,
+      actorRole: actor.role,
       action: 'lookup_item.delete',
       entityType: 'LookupItem',
       entityId: id,

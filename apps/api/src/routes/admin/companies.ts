@@ -20,6 +20,15 @@ const COMPANY_SELECT = {
   updatedAt: true,
 } as const;
 
+function requireActor(req: AuthenticatedRequest, res: Response) {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ message: 'Authentication required.' });
+    return null;
+  }
+  return user;
+}
+
 // ── List companies (paginated, searchable) ────────────────────────────────────
 
 export async function listCompaniesAdminHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -72,6 +81,9 @@ export async function getCompanyHandler(req: AuthenticatedRequest, res: Response
 
 export async function createCompanyHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const body = req.body as CreateCompanyInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
+
   try {
     const company = await prisma.company.create({
       data: {
@@ -88,8 +100,8 @@ export async function createCompanyHandler(req: AuthenticatedRequest, res: Respo
     });
 
     await createAuditLog({
-      actorId: req.user!.sub,
-      actorRole: req.user!.role,
+      actorId: actor.sub,
+      actorRole: actor.role,
       action: 'company.create',
       entityType: 'Company',
       entityId: company.id,
@@ -112,6 +124,8 @@ export async function createCompanyHandler(req: AuthenticatedRequest, res: Respo
 export async function updateCompanyHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const id = req.params.id as string;
   const body = req.body as UpdateCompanyInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const existing = await prisma.company.findFirst({ where: { id, deletedAt: null } });
@@ -137,8 +151,8 @@ export async function updateCompanyHandler(req: AuthenticatedRequest, res: Respo
     });
 
     await createAuditLog({
-      actorId: req.user!.sub,
-      actorRole: req.user!.role,
+      actorId: actor.sub,
+      actorRole: actor.role,
       action: 'company.update',
       entityType: 'Company',
       entityId: company.id,
@@ -161,6 +175,8 @@ export async function updateCompanyHandler(req: AuthenticatedRequest, res: Respo
 
 export async function deleteCompanyHandler(req: AuthenticatedRequest, res: Response): Promise<void> {
   const id = req.params.id as string;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const existing = await prisma.company.findFirst({ where: { id, deletedAt: null } });
@@ -176,8 +192,8 @@ export async function deleteCompanyHandler(req: AuthenticatedRequest, res: Respo
     });
 
     await createAuditLog({
-      actorId: req.user!.sub,
-      actorRole: req.user!.role,
+      actorId: actor.sub,
+      actorRole: actor.role,
       action: 'company.delete',
       entityType: 'Company',
       entityId: id,

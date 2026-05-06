@@ -163,9 +163,9 @@ describe('AssetsPage', () => {
     });
   });
 
-  it('renders Register New Asset button (disabled placeholder)', async () => {
+  it('renders Register New Asset button', async () => {
     renderPage();
     const btn = screen.getByRole('button', { name: /register new asset/i });
-    expect(btn).toBeDisabled();
+    expect(btn).toBeEnabled();
   });
 });

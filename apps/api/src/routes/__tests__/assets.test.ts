@@ -517,6 +517,11 @@ describe('Property Assets API', () => {
       .expect(201);
 
     expect(res.body.item.valuationMethod).toBe('Desktop');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'valuation_entry.create',
+      entityType: 'ValuationEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('200 PATCH /api/v1/assets/properties/:id/valuations/:entryId updates a valuation entry', async () => {
@@ -535,6 +540,11 @@ describe('Property Assets API', () => {
       .expect(200);
 
     expect(res.body.item.valuationMethod).toBe('Full inspection');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'valuation_entry.update',
+      entityType: 'ValuationEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('404 PATCH /api/v1/assets/properties/:id/valuations/:entryId returns not found when the valuation entry does not exist', async () => {
@@ -577,6 +587,11 @@ describe('Property Assets API', () => {
       .expect(201);
 
     expect(res.body.item.lender).toBe('HSBC');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'mortgage_entry.create',
+      entityType: 'MortgageEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('200 PATCH /api/v1/assets/properties/:id/mortgages/:entryId updates a mortgage entry', async () => {
@@ -591,6 +606,11 @@ describe('Property Assets API', () => {
       .expect(200);
 
     expect(res.body.item.lender).toBe('Barclays');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'mortgage_entry.update',
+      entityType: 'MortgageEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('404 PATCH /api/v1/assets/properties/:id/mortgages/:entryId returns not found when the mortgage entry does not exist', async () => {
@@ -636,6 +656,11 @@ describe('Property Assets API', () => {
       .expect(201);
 
     expect(res.body.item.shareholderName).toBe('Owner 3');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'shareholding_entry.create',
+      entityType: 'ShareholdingEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('400 POST /api/v1/assets/properties/:id/shareholdings rejects creation when ownership total exceeds 100', async () => {
@@ -675,6 +700,11 @@ describe('Property Assets API', () => {
       .expect(200);
 
     expect(res.body.item.shareholderName).toBe('Updated Owner');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'shareholding_entry.update',
+      entityType: 'ShareholdingEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('404 PATCH /api/v1/assets/properties/:id/shareholdings/:entryId returns not found when the shareholding entry does not exist', async () => {
@@ -737,6 +767,11 @@ describe('Property Assets API', () => {
       .expect(201);
 
     expect(res.body.item.description).toBe('Repair');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'transaction_entry.create',
+      entityType: 'TransactionEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('200 PATCH /api/v1/assets/properties/:id/transactions/:entryId updates a transaction entry', async () => {
@@ -751,6 +786,11 @@ describe('Property Assets API', () => {
       .expect(200);
 
     expect(res.body.item.description).toBe('Updated repair');
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'transaction_entry.update',
+      entityType: 'TransactionEntry',
+      entityId: ENTRY_ID,
+    }));
   });
 
   it('404 PATCH /api/v1/assets/properties/:id/transactions/:entryId returns not found when the transaction entry does not exist', async () => {

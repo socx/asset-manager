@@ -593,6 +593,8 @@ assetsRouter.get('/properties/:id/valuations', async (req: AuthenticatedRequest,
 assetsRouter.post('/properties/:id/valuations', validate(createValuationEntryInputSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const assetId = req.params.id as string;
   const body = req.body as CreateValuationEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -612,6 +614,15 @@ assetsRouter.post('/properties/:id/valuations', validate(createValuationEntryInp
       },
     });
 
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'valuation_entry.create',
+      entityType: 'ValuationEntry',
+      entityId: entry.id,
+      newValue: entry,
+    });
+
     res.status(201).json({ item: entry });
   } catch (err) {
     logger.error('[assets] createValuation error', { err });
@@ -623,6 +634,8 @@ assetsRouter.patch('/properties/:id/valuations/:entryId', validate(updateValuati
   const assetId = req.params.id as string;
   const entryId = req.params.entryId as string;
   const body = req.body as UpdateValuationEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -646,6 +659,16 @@ assetsRouter.patch('/properties/:id/valuations/:entryId', validate(updateValuati
         ...(body.valuedBy !== undefined && { valuedBy: body.valuedBy }),
         ...(body.notes !== undefined && { notes: body.notes }),
       },
+    });
+
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'valuation_entry.update',
+      entityType: 'ValuationEntry',
+      entityId: entry.id,
+      oldValue: existing,
+      newValue: entry,
     });
 
     res.json({ item: entry });
@@ -681,6 +704,8 @@ assetsRouter.get('/properties/:id/mortgages', async (req: AuthenticatedRequest, 
 assetsRouter.post('/properties/:id/mortgages', validate(createMortgageEntryInputSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const assetId = req.params.id as string;
   const body = req.body as CreateMortgageEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -705,6 +730,15 @@ assetsRouter.post('/properties/:id/mortgages', validate(createMortgageEntryInput
       },
     });
 
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'mortgage_entry.create',
+      entityType: 'MortgageEntry',
+      entityId: entry.id,
+      newValue: entry,
+    });
+
     res.status(201).json({ item: entry });
   } catch (err) {
     logger.error('[assets] createMortgage error', { err });
@@ -716,6 +750,8 @@ assetsRouter.patch('/properties/:id/mortgages/:entryId', validate(updateMortgage
   const assetId = req.params.id as string;
   const entryId = req.params.entryId as string;
   const body = req.body as UpdateMortgageEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -744,6 +780,16 @@ assetsRouter.patch('/properties/:id/mortgages/:entryId', validate(updateMortgage
         ...(body.settledAt !== undefined && { settledAt: body.settledAt ? new Date(body.settledAt) : null }),
         ...(body.notes !== undefined && { notes: body.notes }),
       },
+    });
+
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'mortgage_entry.update',
+      entityType: 'MortgageEntry',
+      entityId: entry.id,
+      oldValue: existing,
+      newValue: entry,
     });
 
     res.json({ item: entry });
@@ -779,6 +825,8 @@ assetsRouter.get('/properties/:id/shareholdings', async (req: AuthenticatedReque
 assetsRouter.post('/properties/:id/shareholdings', validate(createShareholdingEntryInputSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const assetId = req.params.id as string;
   const body = req.body as CreateShareholdingEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -811,6 +859,15 @@ assetsRouter.post('/properties/:id/shareholdings', validate(createShareholdingEn
       return created;
     });
 
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'shareholding_entry.create',
+      entityType: 'ShareholdingEntry',
+      entityId: entry.id,
+      newValue: entry,
+    });
+
     res.status(201).json({ item: entry });
   } catch (err: unknown) {
     if (err instanceof Error && err.message === 'OWNERSHIP_OVER_100') {
@@ -826,6 +883,8 @@ assetsRouter.patch('/properties/:id/shareholdings/:entryId', validate(updateShar
   const assetId = req.params.id as string;
   const entryId = req.params.entryId as string;
   const body = req.body as UpdateShareholdingEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -862,6 +921,16 @@ assetsRouter.patch('/properties/:id/shareholdings/:entryId', validate(updateShar
       }
 
       return updated;
+    });
+
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'shareholding_entry.update',
+      entityType: 'ShareholdingEntry',
+      entityId: entry.id,
+      oldValue: existing,
+      newValue: entry,
     });
 
     res.json({ item: entry });
@@ -907,6 +976,8 @@ assetsRouter.get('/properties/:id/transactions', async (req: AuthenticatedReques
 assetsRouter.post('/properties/:id/transactions', validate(createTransactionEntryInputSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const assetId = req.params.id as string;
   const body = req.body as CreateTransactionEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -925,6 +996,15 @@ assetsRouter.post('/properties/:id/transactions', validate(createTransactionEntr
       },
     });
 
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'transaction_entry.create',
+      entityType: 'TransactionEntry',
+      entityId: entry.id,
+      newValue: entry,
+    });
+
     res.status(201).json({ item: entry });
   } catch (err) {
     logger.error('[assets] createTransaction error', { err });
@@ -936,6 +1016,8 @@ assetsRouter.patch('/properties/:id/transactions/:entryId', validate(updateTrans
   const assetId = req.params.id as string;
   const entryId = req.params.entryId as string;
   const body = req.body as UpdateTransactionEntryInput;
+  const actor = requireActor(req, res);
+  if (!actor) return;
 
   try {
     const asset = await findAccessibleAsset(assetId, req);
@@ -958,6 +1040,16 @@ assetsRouter.patch('/properties/:id/transactions/:entryId', validate(updateTrans
         ...(body.amount !== undefined && { amount: new Prisma.Decimal(body.amount) }),
         ...(body.categoryId !== undefined && { categoryId: body.categoryId }),
       },
+    });
+
+    await createAuditLog({
+      actorId: actor.sub,
+      actorRole: actor.role,
+      action: 'transaction_entry.update',
+      entityType: 'TransactionEntry',
+      entityId: entry.id,
+      oldValue: existing,
+      newValue: entry,
     });
 
     res.json({ item: entry });

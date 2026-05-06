@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { Prisma } from '@prisma/client';
 import { createApp } from '../../app';
 
 jest.mock('@asset-manager/db', () => ({
@@ -158,6 +159,17 @@ function makeDetailAsset(overrides = {}) {
   };
 }
 
+function makeP2002Error(target: string[]) {
+  const error = Object.create(Prisma.PrismaClientKnownRequestError.prototype);
+  return Object.assign(error, {
+    code: 'P2002',
+    meta: { target },
+    clientVersion: 'test',
+    name: 'PrismaClientKnownRequestError',
+    message: 'Unique constraint failed',
+  });
+}
+
 describe('Property Assets API', () => {
   const app = createApp();
 
@@ -274,6 +286,63 @@ describe('Property Assets API', () => {
       .expect(400);
   });
 
+  it('400 POST /api/v1/assets/properties rejects requests with both manager types set', async () => {
+    await request(app)
+      .post('/api/v1/assets/properties')
+      .set('Authorization', AUTH)
+      .send({
+        managedByUserId: MANAGER_ID,
+        managedByCompanyId: COMPANY_ID,
+        ownershipTypeId: LOOKUP_ID,
+        addressLine1: '1 Main Street',
+        city: 'London',
+        postCode: 'SW1A 1AA',
+        country: 'United Kingdom',
+        propertyStatusId: LOOKUP_ID,
+        propertyPurposeId: LOOKUP_ID,
+      })
+      .expect(400);
+  });
+
+  it('400 POST /api/v1/assets/properties rejects requests when the asset class does not resolve to Property', async () => {
+    mockPrisma.lookupItem.findFirst.mockResolvedValue(null);
+
+    await request(app)
+      .post('/api/v1/assets/properties')
+      .set('Authorization', AUTH)
+      .send({
+        assetClassId: LOOKUP_ID,
+        ownershipTypeId: LOOKUP_ID,
+        addressLine1: '1 Main Street',
+        city: 'London',
+        postCode: 'SW1A 1AA',
+        country: 'United Kingdom',
+        propertyStatusId: LOOKUP_ID,
+        propertyPurposeId: LOOKUP_ID,
+      })
+      .expect(400);
+  });
+
+  it('409 POST /api/v1/assets/properties returns conflict when a custom alias is already in use', async () => {
+    mockPrisma.lookupItem.findFirst.mockResolvedValue({ id: LOOKUP_ID });
+    mockPrisma.$transaction.mockRejectedValue(makeP2002Error(['customAlias']));
+
+    await request(app)
+      .post('/api/v1/assets/properties')
+      .set('Authorization', AUTH)
+      .send({
+        customAlias: 'my-property',
+        ownershipTypeId: LOOKUP_ID,
+        addressLine1: '1 Main Street',
+        city: 'London',
+        postCode: 'SW1A 1AA',
+        country: 'United Kingdom',
+        propertyStatusId: LOOKUP_ID,
+        propertyPurposeId: LOOKUP_ID,
+      })
+      .expect(409);
+  });
+
   it('200 GET /api/v1/assets/properties returns property assets', async () => {
     mockPrisma.propertyAsset.findMany.mockResolvedValue([
       {
@@ -330,6 +399,46 @@ describe('Property Assets API', () => {
     expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'property_asset.update' }));
   });
 
+  it('400 PATCH /api/v1/assets/properties/:id rejects requests with both manager types set', async () => {
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}`)
+      .set('Authorization', AUTH)
+      .send({ managedByUserId: MANAGER_ID, managedByCompanyId: COMPANY_ID })
+      .expect(400);
+  });
+
+  it('404 PATCH /api/v1/assets/properties/:id returns not found when the asset is outside the user scope', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(null);
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}`)
+      .set('Authorization', AUTH)
+      .send({ city: 'Manchester' })
+      .expect(404);
+  });
+
+  it('404 PATCH /api/v1/assets/properties/:id returns not found when the asset row cannot be reloaded', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.propertyAsset.findUnique.mockResolvedValue(null);
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}`)
+      .set('Authorization', AUTH)
+      .send({ city: 'Manchester' })
+      .expect(404);
+  });
+
+  it('400 PATCH /api/v1/assets/properties/:id rejects updates when the custom alias is already set', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.propertyAsset.findUnique.mockResolvedValue({ customAlias: 'locked-alias', ownerId: OWNER_ID });
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}`)
+      .set('Authorization', AUTH)
+      .send({ customAlias: 'new-alias' })
+      .expect(400);
+  });
+
   it('403 PATCH /api/v1/assets/properties/:id prevents non-admin owner reassignment', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
     mockPrisma.propertyAsset.findUnique.mockResolvedValue({ customAlias: null, ownerId: OWNER_ID });
@@ -339,6 +448,19 @@ describe('Property Assets API', () => {
       .set('Authorization', AUTH)
       .send({ ownerId: OTHER_ID })
       .expect(403);
+  });
+
+  it('409 PATCH /api/v1/assets/properties/:id returns conflict when the custom alias is already in use', async () => {
+    mockVerifyAccessToken.mockReturnValue(makeTokenPayload({ sub: ADMIN_ID, role: 'system_admin' }));
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.propertyAsset.findUnique.mockResolvedValue({ customAlias: null, ownerId: OWNER_ID });
+    mockPrisma.propertyAsset.update.mockRejectedValue(makeP2002Error(['customAlias']));
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}`)
+      .set('Authorization', AUTH)
+      .send({ customAlias: 'duplicate-alias' })
+      .expect(409);
   });
 
   it('403 DELETE /api/v1/assets/properties/:id prevents a managing user from deleting the asset', async () => {
@@ -375,6 +497,69 @@ describe('Property Assets API', () => {
     expect(res.body.items[0].id).toBe(ENTRY_ID);
   });
 
+  it('201 POST /api/v1/assets/properties/:id/valuations creates a valuation entry', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.valuationEntry.create.mockResolvedValue({
+      id: ENTRY_ID,
+      assetId: ASSET_ID,
+      valuationMethod: 'Desktop',
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/assets/properties/${ASSET_ID}/valuations`)
+      .set('Authorization', AUTH)
+      .send({
+        valuationDate: '2026-05-02T00:00:00.000Z',
+        valuationAmount: 255000,
+        valuationMethod: 'Desktop',
+        valuedBy: 'Surveyor Ltd',
+      })
+      .expect(201);
+
+    expect(res.body.item.valuationMethod).toBe('Desktop');
+  });
+
+  it('200 PATCH /api/v1/assets/properties/:id/valuations/:entryId updates a valuation entry', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.valuationEntry.findFirst.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID });
+    mockPrisma.valuationEntry.update.mockResolvedValue({
+      id: ENTRY_ID,
+      assetId: ASSET_ID,
+      valuationMethod: 'Full inspection',
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/valuations/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ valuationMethod: 'Full inspection' })
+      .expect(200);
+
+    expect(res.body.item.valuationMethod).toBe('Full inspection');
+  });
+
+  it('404 PATCH /api/v1/assets/properties/:id/valuations/:entryId returns not found when the valuation entry does not exist', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.valuationEntry.findFirst.mockResolvedValue(null);
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/valuations/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ valuationMethod: 'Full inspection' })
+      .expect(404);
+  });
+
+  it('200 GET /api/v1/assets/properties/:id/mortgages lists mortgage entries for an accessible asset', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.mortgageEntry.findMany.mockResolvedValue([{ id: ENTRY_ID, assetId: ASSET_ID, lender: 'HSBC' }]);
+
+    const res = await request(app)
+      .get(`/api/v1/assets/properties/${ASSET_ID}/mortgages`)
+      .set('Authorization', AUTH)
+      .expect(200);
+
+    expect(res.body.items[0].lender).toBe('HSBC');
+  });
+
   it('201 POST /api/v1/assets/properties/:id/mortgages creates a mortgage entry', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
     mockPrisma.mortgageEntry.create.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID, lender: 'HSBC' });
@@ -394,6 +579,115 @@ describe('Property Assets API', () => {
     expect(res.body.item.lender).toBe('HSBC');
   });
 
+  it('200 PATCH /api/v1/assets/properties/:id/mortgages/:entryId updates a mortgage entry', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.mortgageEntry.findFirst.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID });
+    mockPrisma.mortgageEntry.update.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID, lender: 'Barclays' });
+
+    const res = await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/mortgages/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ lender: 'Barclays' })
+      .expect(200);
+
+    expect(res.body.item.lender).toBe('Barclays');
+  });
+
+  it('404 PATCH /api/v1/assets/properties/:id/mortgages/:entryId returns not found when the mortgage entry does not exist', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.mortgageEntry.findFirst.mockResolvedValue(null);
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/mortgages/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ lender: 'Barclays' })
+      .expect(404);
+  });
+
+  it('200 GET /api/v1/assets/properties/:id/shareholdings lists shareholding entries for an accessible asset', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.shareholdingEntry.findMany.mockResolvedValue([{ id: ENTRY_ID, assetId: ASSET_ID, shareholderName: 'Owner 1' }]);
+
+    const res = await request(app)
+      .get(`/api/v1/assets/properties/${ASSET_ID}/shareholdings`)
+      .set('Authorization', AUTH)
+      .expect(200);
+
+    expect(res.body.items[0].shareholderName).toBe('Owner 1');
+  });
+
+  it('201 POST /api/v1/assets/properties/:id/shareholdings creates a shareholding entry', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+      shareholdingEntry: {
+        create: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID, shareholderName: 'Owner 3' }),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 100 } }),
+      },
+    }));
+
+    const res = await request(app)
+      .post(`/api/v1/assets/properties/${ASSET_ID}/shareholdings`)
+      .set('Authorization', AUTH)
+      .send({
+        shareholderName: 'Owner 3',
+        ownershipPercent: 10,
+        profitPercent: 10,
+      })
+      .expect(201);
+
+    expect(res.body.item.shareholderName).toBe('Owner 3');
+  });
+
+  it('400 POST /api/v1/assets/properties/:id/shareholdings rejects creation when ownership total exceeds 100', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+      shareholdingEntry: {
+        create: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID }),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 110 } }),
+      },
+    }));
+
+    await request(app)
+      .post(`/api/v1/assets/properties/${ASSET_ID}/shareholdings`)
+      .set('Authorization', AUTH)
+      .send({
+        shareholderName: 'Owner 3',
+        ownershipPercent: 10,
+        profitPercent: 10,
+      })
+      .expect(400);
+  });
+
+  it('200 PATCH /api/v1/assets/properties/:id/shareholdings/:entryId updates a shareholding entry when the total remains valid', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.shareholdingEntry.findFirst.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID });
+    mockPrisma.$transaction.mockImplementation(async (callback: any) => callback({
+      shareholdingEntry: {
+        update: jest.fn().mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID, shareholderName: 'Updated Owner' }),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { ownershipPercent: 100 } }),
+      },
+    }));
+
+    const res = await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/shareholdings/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ shareholderName: 'Updated Owner' })
+      .expect(200);
+
+    expect(res.body.item.shareholderName).toBe('Updated Owner');
+  });
+
+  it('404 PATCH /api/v1/assets/properties/:id/shareholdings/:entryId returns not found when the shareholding entry does not exist', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.shareholdingEntry.findFirst.mockResolvedValue(null);
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/shareholdings/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ shareholderName: 'Updated Owner' })
+      .expect(404);
+  });
+
   it('400 PATCH /api/v1/assets/properties/:id/shareholdings/:entryId rejects updates that push ownership above 100', async () => {
     mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
     mockPrisma.shareholdingEntry.findFirst.mockResolvedValue({ id: ENTRY_ID, assetId: ASSET_ID });
@@ -409,6 +703,22 @@ describe('Property Assets API', () => {
       .set('Authorization', AUTH)
       .send({ ownershipPercent: 90 })
       .expect(400);
+  });
+
+  it('200 GET /api/v1/assets/properties/:id/transactions lists transactions with pagination metadata', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.transactionEntry.findMany.mockResolvedValue([
+      { id: ENTRY_ID, assetId: ASSET_ID, description: 'Repair' },
+      { id: '99999999-9999-4999-8999-999999999999', assetId: ASSET_ID, description: 'Insurance' },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/v1/assets/properties/${ASSET_ID}/transactions?limit=1`)
+      .set('Authorization', AUTH)
+      .expect(200);
+
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.nextCursor).toBe(ENTRY_ID);
   });
 
   it('201 POST /api/v1/assets/properties/:id/transactions creates a transaction entry', async () => {
@@ -441,5 +751,16 @@ describe('Property Assets API', () => {
       .expect(200);
 
     expect(res.body.item.description).toBe('Updated repair');
+  });
+
+  it('404 PATCH /api/v1/assets/properties/:id/transactions/:entryId returns not found when the transaction entry does not exist', async () => {
+    mockPrisma.propertyAsset.findFirst.mockResolvedValue(makeAccessibleAsset());
+    mockPrisma.transactionEntry.findFirst.mockResolvedValue(null);
+
+    await request(app)
+      .patch(`/api/v1/assets/properties/${ASSET_ID}/transactions/${ENTRY_ID}`)
+      .set('Authorization', AUTH)
+      .send({ description: 'Updated repair' })
+      .expect(404);
   });
 });

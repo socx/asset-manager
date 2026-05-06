@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import AssetsPage from '../AssetsPage';
 import * as assetsApi from '../../api/assets';
-import * as authStore from '../../store/authStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

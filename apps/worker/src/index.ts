@@ -17,6 +17,28 @@ const connection = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: null,
 });
 
+// Worker heartbeat: refresh a Redis key so the API can detect the worker is running
+const WORKER_HEARTBEAT_KEY = 'worker:heartbeat';
+const WORKER_HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
+const WORKER_HEARTBEAT_EX_SECONDS = 90; // expire after 90 seconds
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+async function refreshHeartbeat() {
+  try {
+    await connection.set(WORKER_HEARTBEAT_KEY, String(Date.now()), 'EX', WORKER_HEARTBEAT_EX_SECONDS);
+  } catch (err: any) {
+    console.error('[worker] Failed to set heartbeat:', err?.message ?? err);
+  }
+}
+
+// Start heartbeat loop
+refreshHeartbeat().catch(() => {});
+heartbeatTimer = setInterval(() => void refreshHeartbeat(), WORKER_HEARTBEAT_INTERVAL_MS);
+
+// Ensure the heartbeat timer does not keep the Node.js event loop alive
+if (heartbeatTimer && typeof (heartbeatTimer as any).unref === 'function') {
+  (heartbeatTimer as any).unref();
+}
+
 const transport = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
@@ -139,11 +161,33 @@ emailWorker.on('failed', (job, err) => {
 
 console.log('[worker] Started — listening for jobs on Redis queue "email"');
 
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   console.log(`[worker] ${signal} received — shutting down gracefully`);
-  emailWorker.close().then(() => process.exit(0));
-  setTimeout(() => process.exit(1), 10_000);
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+
+  // best-effort: remove heartbeat key so API shows offline immediately
+  try {
+    await connection.del(WORKER_HEARTBEAT_KEY);
+  } catch {}
+
+  // Close email worker and Redis connection before exiting
+  try {
+    await emailWorker.close();
+  } catch (err) {
+    console.error('[worker] Failed to close email worker:', (err as any)?.message ?? err);
+  }
+
+  try {
+    await connection.quit();
+  } catch (err) {
+    console.error('[worker] Failed to quit Redis connection:', (err as any)?.message ?? err);
+  }
+
+  process.exit(0);
 };
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', (sig) => void shutdown('SIGTERM'));
+process.on('SIGINT', (sig) => void shutdown('SIGINT'));

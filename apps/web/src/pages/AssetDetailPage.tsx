@@ -362,31 +362,31 @@ export default function AssetDetailPage() {
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Edit Overview</p>
             {overviewError && <p className="text-xs text-red-600 dark:text-red-400">{overviewError}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.addressLine1} onChange={(e) => setOverviewForm((s) => ({ ...s, addressLine1: e.target.value }))} placeholder="Address line 1" />
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.city} onChange={(e) => setOverviewForm((s) => ({ ...s, city: e.target.value }))} placeholder="City" />
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.postCode} onChange={(e) => setOverviewForm((s) => ({ ...s, postCode: e.target.value }))} placeholder="Post code" />
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.country} onChange={(e) => setOverviewForm((s) => ({ ...s, country: e.target.value }))} placeholder="Country" />
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.ownershipTypeId} onChange={(e) => setOverviewForm((s) => ({ ...s, ownershipTypeId: e.target.value }))}>
+              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.addressLine1} onChange={(e) => setOverviewForm((s) => ({ ...s, addressLine1: e.target.value }))} placeholder="Address line 1" />
+              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.city} onChange={(e) => setOverviewForm((s) => ({ ...s, city: e.target.value }))} placeholder="City" />
+              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.postCode} onChange={(e) => setOverviewForm((s) => ({ ...s, postCode: e.target.value }))} placeholder="Post code" />
+              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.country} onChange={(e) => setOverviewForm((s) => ({ ...s, country: e.target.value }))} placeholder="Country" />
+              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.ownershipTypeId} onChange={(e) => setOverviewForm((s) => ({ ...s, ownershipTypeId: e.target.value }))}>
                 <option value="">Ownership type</option>
                 {lookups.ownershipTypes.map((opt) => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
               </select>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.propertyPurposeId} onChange={(e) => setOverviewForm((s) => ({ ...s, propertyPurposeId: e.target.value }))}>
+              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.propertyPurposeId} onChange={(e) => setOverviewForm((s) => ({ ...s, propertyPurposeId: e.target.value }))}>
                 <option value="">Property purpose</option>
                 {lookups.propertyPurposes.map((opt) => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
               </select>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.ownerId} onChange={(e) => setOverviewForm((s) => ({ ...s, ownerId: e.target.value }))}>
+              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.ownerId} onChange={(e) => setOverviewForm((s) => ({ ...s, ownerId: e.target.value }))}>
                 <option value="">— Select owner —</option>
                 {userOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
               </select>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.managedByUserId} onChange={(e) => setOverviewForm((s) => ({ ...s, managedByUserId: e.target.value, managedByCompanyId: '' }))}>
+              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.managedByUserId} onChange={(e) => setOverviewForm((s) => ({ ...s, managedByUserId: e.target.value, managedByCompanyId: '' }))}>
                 <option value="">Managed by user</option>
                 {userOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
               </select>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.managedByCompanyId} onChange={(e) => setOverviewForm((s) => ({ ...s, managedByCompanyId: e.target.value, managedByUserId: '' }))}>
+              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.managedByCompanyId} onChange={(e) => setOverviewForm((s) => ({ ...s, managedByCompanyId: e.target.value, managedByUserId: '' }))}>
                 <option value="">Managed by company</option>
                 {lookups.companies.map((opt) => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
               </select>
-              <input type="date" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.purchaseDate} onChange={(e) => setOverviewForm((s) => ({ ...s, purchaseDate: e.target.value }))} placeholder="Purchase date" />
+              <input type="date" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.purchaseDate} onChange={(e) => setOverviewForm((s) => ({ ...s, purchaseDate: e.target.value }))} placeholder="Purchase date" />
               <div className="flex rounded-lg shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus-within:ring-2 focus-within:ring-sky-500 bg-white dark:bg-gray-900">
                 <span className="flex select-none items-center pl-3 text-gray-500 dark:text-gray-400 text-sm">£</span>
                 <input type="number" step="0.01" min="0" className="block flex-1 border-0 bg-transparent py-2 pl-1 pr-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-0 focus:outline-none" value={overviewForm.purchasePrice} onChange={(e) => setOverviewForm((s) => ({ ...s, purchasePrice: e.target.value }))} placeholder="Purchase price" />
@@ -403,7 +403,7 @@ export default function AssetDetailPage() {
                 <span className="flex select-none items-center pl-3 text-gray-500 dark:text-gray-400 text-sm">£</span>
                 <input type="number" step="0.01" min="0" className="block flex-1 border-0 bg-transparent py-2 pl-1 pr-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-0 focus:outline-none" value={overviewForm.legalFees} onChange={(e) => setOverviewForm((s) => ({ ...s, legalFees: e.target.value }))} placeholder="Legal fees" />
               </div>
-              <textarea className="sm:col-span-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.description} onChange={(e) => setOverviewForm((s) => ({ ...s, description: e.target.value }))} placeholder="Description" rows={3} />
+              <textarea className="sm:col-span-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.description} onChange={(e) => setOverviewForm((s) => ({ ...s, description: e.target.value }))} placeholder="Description" rows={3} />
             </div>
             <div className="flex gap-2 justify-end">
               <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600" onClick={() => setShowEditOverview(false)}>Cancel</button>

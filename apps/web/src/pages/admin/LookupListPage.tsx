@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
+import { requireAccessToken } from '../../lib/utils';
 import { ApiResponseError } from '../../api/auth';
 import {
   listAdminLookupItems,
@@ -177,12 +178,7 @@ export default function LookupListPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const queryClient = useQueryClient();
 
-  function requireAccessToken(): string {
-    if (!accessToken) {
-      throw new Error('Authentication required');
-    }
-    return accessToken;
-  }
+
 
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
@@ -201,7 +197,7 @@ export default function LookupListPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'lookup', activeType],
-    queryFn: () => listAdminLookupItems(activeType, requireAccessToken()),
+    queryFn: () => listAdminLookupItems(activeType, requireAccessToken(accessToken)),
     enabled: !!accessToken,
   });
 
@@ -220,7 +216,7 @@ export default function LookupListPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: { name: string; description?: string; sortOrder?: number }) =>
-      createLookupItem(activeType, payload, requireAccessToken()),
+      createLookupItem(activeType, payload, requireAccessToken(accessToken)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lookup', activeType] });
       setShowCreate(false);
@@ -233,7 +229,7 @@ export default function LookupListPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateLookupItem>[1] }) =>
-      updateLookupItem(id, payload, requireAccessToken()),
+      updateLookupItem(id, payload, requireAccessToken(accessToken)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lookup', activeType] });
       setEditItem(null);
@@ -245,7 +241,7 @@ export default function LookupListPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteLookupItem(id, requireAccessToken()),
+    mutationFn: (id: string) => deleteLookupItem(id, requireAccessToken(accessToken)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lookup', activeType] });
       setDeleteConfirm(null);

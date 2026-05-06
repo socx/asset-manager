@@ -8,17 +8,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import { listPropertyAssets, type PropertyAssetListItem } from '../api/assets';
+import { requireAccessToken, formatCurrency } from '../lib/utils';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function requireAccessToken(token: string | null): string {
-  if (!token) throw new Error('Not authenticated');
-  return token;
-}
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-}
 
 function addressOneLine(a: PropertyAssetListItem): string {
   return [a.addressLine1, a.city, a.postCode].filter(Boolean).join(', ');

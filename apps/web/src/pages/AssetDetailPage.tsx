@@ -18,20 +18,11 @@ import {
   type CreateValuationPayload,
 } from '../api/assets';
 import { useWizardLookups } from '../hooks/useWizardLookups';
+import { requireAccessToken, formatCurrency } from '../lib/utils';
 
 const ADMIN_ROLES = new Set(['super_admin', 'system_admin']);
 
 type TabKey = 'overview' | 'financials' | 'shareholding' | 'transactions' | 'documents';
-
-function requireAccessToken(token: string | null): string {
-  if (!token) throw new Error('Not authenticated');
-  return token;
-}
-
-function money(value: number | string | null | undefined): string {
-  if (value === null || value === undefined) return 'N/A';
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
-}
 
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -449,7 +440,7 @@ export default function AssetDetailPage() {
             <div className="mt-4 space-y-4">
               <div className="rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 p-4">
                 <p className="text-xs uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">Current Valuation</p>
-                <p className="text-2xl font-semibold text-sky-800 dark:text-sky-200 mt-1">{latestValuation ? money(latestValuation.valuationAmount) : 'No valuation yet'}</p>
+                <p className="text-2xl font-semibold text-sky-800 dark:text-sky-200 mt-1">{latestValuation ? formatCurrency(latestValuation.valuationAmount) : 'No valuation yet'}</p>
                 {latestValuation && <p className="text-xs text-sky-700/80 dark:text-sky-300/80 mt-1">As of {new Date(latestValuation.valuationDate).toLocaleDateString('en-GB')}</p>}
               </div>
 
@@ -474,10 +465,10 @@ export default function AssetDetailPage() {
                   )}
                 </div>
                 <p className="mt-1">Date: {asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString('en-GB') : 'N/A'}</p>
-                <p>Price: {money(asset.purchasePrice)}</p>
-                <p>Deposit Paid: {money(asset.depositPaid)}</p>
-                <p>Duties / Taxes: {money(asset.dutiesTaxes)}</p>
-                <p>Legal Fees: {money(asset.legalFees)}</p>
+                <p>Price: {formatCurrency(asset.purchasePrice)}</p>
+                <p>Deposit Paid: {formatCurrency(asset.depositPaid)}</p>
+                <p>Duties / Taxes: {formatCurrency(asset.dutiesTaxes)}</p>
+                <p>Legal Fees: {formatCurrency(asset.legalFees)}</p>
                 <p>Financed: {asset.isFinanced ? 'Yes' : 'No'}</p>
 
                 {showEditPurchase && (
@@ -544,7 +535,7 @@ export default function AssetDetailPage() {
                         {asset.valuations.map((v) => (
                           <tr key={v.id} className="border-t border-gray-200 dark:border-gray-700">
                             <td className="px-2 py-1">{new Date(v.valuationDate).toLocaleDateString('en-GB')}</td>
-                            <td className="px-2 py-1">{money(v.valuationAmount)}</td>
+                            <td className="px-2 py-1">{formatCurrency(v.valuationAmount)}</td>
                             <td className="px-2 py-1">{v.valuationMethod}</td>
                             <td className="px-2 py-1">{v.valuedBy ?? 'N/A'}</td>
                             <td className="px-2 py-1">{v.notes ?? '—'}</td>
@@ -595,7 +586,7 @@ export default function AssetDetailPage() {
                           <tr key={m.id} className="border-t border-gray-200 dark:border-gray-700">
                             <td className="px-2 py-1">{m.lender}</td>
                             <td className="px-2 py-1">{m.productName ?? 'N/A'}</td>
-                            <td className="px-2 py-1">{money(m.loanAmount)}</td>
+                            <td className="px-2 py-1">{formatCurrency(m.loanAmount)}</td>
                             <td className="px-2 py-1">{m.interestRate === null || m.interestRate === undefined ? 'N/A' : `${Number(m.interestRate).toFixed(2)}%`}</td>
                             <td className="px-2 py-1">{m.termYears ?? 'N/A'}</td>
                             <td className="px-2 py-1">{new Date(m.startDate).toLocaleDateString('en-GB')}</td>
@@ -716,7 +707,7 @@ export default function AssetDetailPage() {
 
               {sortedTransactions.length === 0 && <p className="mt-2 text-gray-500 dark:text-gray-400">No transactions yet.</p>}
               {sortedTransactions.map((t) => (
-                <p key={t.id} className="py-1">{new Date(t.date).toLocaleDateString('en-GB')} - {t.description} - {money(t.amount)}</p>
+                <p key={t.id} className="py-1">{new Date(t.date).toLocaleDateString('en-GB')} - {t.description} - {formatCurrency(t.amount)}</p>
               ))}
 
               <div className="mt-3">

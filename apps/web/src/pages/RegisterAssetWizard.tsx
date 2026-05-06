@@ -11,6 +11,7 @@ import {
   type CreateValuationPayload,
 } from '../api/assets';
 import { useWizardLookups, type LookupOption } from '../hooks/useWizardLookups';
+import { requireAccessToken, parseMoney, parseNumber } from '../lib/utils';
 
 const field =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500';
@@ -90,20 +91,7 @@ const INITIAL: WizardState = {
 
 const STEP_LABELS = ['Basic Details', 'Property Info', 'Purchase Details', 'Shareholding', 'Valuation', 'Mortgage', 'Review'];
 
-function requireAccessToken(token: string | null): string {
-  if (!token) throw new Error('Not authenticated');
-  return token;
-}
 
-function parseMoney(value: string): number | undefined {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-function parseNumber(value: string): number {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : 0;
-}
 
 function toIsoDate(value: string): string | undefined {
   if (!value) return undefined;

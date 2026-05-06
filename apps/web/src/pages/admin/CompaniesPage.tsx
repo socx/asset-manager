@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
+import { requireAccessToken } from '../../lib/utils';
 import { ApiResponseError } from '../../api/auth';
 import {
   listAdminCompanies,
@@ -127,12 +128,7 @@ export default function CompaniesPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const queryClient = useQueryClient();
 
-  function requireAccessToken(): string {
-    if (!accessToken) {
-      throw new Error('Authentication required');
-    }
-    return accessToken;
-  }
+
 
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
@@ -152,13 +148,13 @@ export default function CompaniesPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'companies', debouncedSearch],
-    queryFn: () => listAdminCompanies({ search: debouncedSearch || undefined, limit: 50 }, requireAccessToken()),
+    queryFn: () => listAdminCompanies({ search: debouncedSearch || undefined, limit: 50 }, requireAccessToken(accessToken)),
     enabled: !!accessToken,
   });
 
   const { data: typesData } = useQuery({
     queryKey: ['admin', 'lookup', 'company_type'],
-    queryFn: () => listAdminLookupItems('company_type', requireAccessToken()),
+    queryFn: () => listAdminLookupItems('company_type', requireAccessToken(accessToken)),
     enabled: !!accessToken,
   });
   const companyTypes = (typesData?.items ?? []).filter((t) => t.isActive).map((t) => ({ id: t.id, name: t.name }));
@@ -175,7 +171,7 @@ export default function CompaniesPage() {
   }
 
   const createMutation = useMutation({
-    mutationFn: (payload: CompanyPayload) => createAdminCompany(payload, requireAccessToken()),
+    mutationFn: (payload: CompanyPayload) => createAdminCompany(payload, requireAccessToken(accessToken)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
       setShowCreate(false);
@@ -188,7 +184,7 @@ export default function CompaniesPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<CompanyPayload & { isActive: boolean }> }) =>
-      updateAdminCompany(id, payload, requireAccessToken()),
+      updateAdminCompany(id, payload, requireAccessToken(accessToken)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
       setEditCompany(null);
@@ -200,7 +196,7 @@ export default function CompaniesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteAdminCompany(id, requireAccessToken()),
+    mutationFn: (id: string) => deleteAdminCompany(id, requireAccessToken(accessToken)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
       setDeleteConfirm(null);

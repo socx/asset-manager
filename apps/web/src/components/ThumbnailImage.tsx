@@ -5,7 +5,7 @@ export default function ThumbnailImage({
   rawUrl,
   alt,
   className,
-  lqip?: string;
+  lqip,
 }: {
   thumbnailUrl: string;
   rawUrl: string;

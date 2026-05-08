@@ -43,3 +43,5 @@ Thumbs.db
 
 # ── Documents ──────────────────────────────────────────────────────
 docs/private/
+
+apps/api/uploads/documents

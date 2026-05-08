@@ -9,6 +9,8 @@
     "start": "node dist/index.js",
     "test": "jest --passWithNoTests",
     "test:coverage": "jest --passWithNoTests --coverage --forceExit",
+    "test:coverage:ci": "jest --passWithNoTests --coverage --json --outputFile=coverage/jest-results.json --forceExit",
+    "test:count:guard": "node scripts/check-test-count.cjs",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },

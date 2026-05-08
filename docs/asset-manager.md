@@ -1073,15 +1073,15 @@ system_settings
 **Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 19 May 2026
 
 **Acceptance Criteria:**
-- [ ] Navigation sidebar gains an "Assets" item (→ `/assets`) visible to all authenticated roles
-- [ ] Listing page displays assets in **two switchable views**: table and tile (toggle persisted to `localStorage`)
-- [ ] **Table view** columns: Property Code, Address (single line), Type, Status, Current Valuation, Owner, Manager
-- [ ] **Tile view**: card per asset showing Property Code, address, property purpose, status, current valuation
-- [ ] Clicking a row or tile navigates to the asset detail page (`/assets/:id`)
-- [ ] Search bar filters by property code, address fields, owner name
-- [ ] "Register New Asset" button → opens the registration wizard
-- [ ] `asset_owner` / `asset_manager` see only their own assets (owned or managed); admins see all
-- [ ] Empty state with a prompt to register the first asset
+- [x] Navigation sidebar gains an "Assets" item (→ `/assets`) visible to all authenticated roles
+- [x] Listing page displays assets in **two switchable views**: table and tile (toggle persisted to `localStorage`)
+- [x] **Table view** columns: Property Code, Address (single line), Type, Status, Current Valuation, Owner, Manager
+- [x] **Tile view**: card per asset showing Property Code, address, property purpose, status, current valuation
+- [x] Clicking a row or tile navigates to the asset detail page (`/assets/:id`)
+- [x] Search bar filters by property code, address fields, owner name
+- [x] "Register New Asset" button → opens the registration wizard
+- [x] `asset_owner` / `asset_manager` see only their own assets (owned or managed); admins see all
+- [x] Empty state with a prompt to register the first asset
 
 ---
 
@@ -1156,12 +1156,12 @@ system_settings
 7. **Review & Confirm** — Summary of all entered data with edit links back to each step
 
 **Acceptance Criteria:**
-- [ ] Step indicator shows current position; completed steps are visually marked
-- [ ] Partial progress preserved in React state so navigating back doesn't lose data
-- [ ] Wizard submits all data in a single API call on the final confirmation step
-- [ ] Inline validation on each step before allowing "Next"
-- [ ] On success, redirect to the new asset's detail page
-- [ ] Cancelling from any step returns to the asset listing (with confirmation prompt if data was entered)
+- [x] Step indicator shows current position; completed steps are visually marked
+- [x] Partial progress preserved in React state so navigating back doesn't lose data
+- [x] Wizard submits all data in a single API call on the final confirmation step
+- [x] Inline validation on each step before allowing "Next"
+- [x] On success, redirect to the new asset's detail page
+- [x] Cancelling from any step returns to the asset listing (with confirmation prompt if data was entered)
 
 ---
 
@@ -1174,15 +1174,15 @@ system_settings
 **Size:** L · **Estimate:** 1–2 weeks · **Priority:** High · **Target:** 26 May 2026
 
 **Acceptance Criteria:**
-- [ ] `/assets/:id` page with tabbed sections: **Overview**, **Financials** (purchase info + valuation history + mortgage history), **Shareholding**, **Transactions**, **Documents** (placeholder for ITER-5)
-- [ ] Current valuation (most recent by date) prominently displayed in Overview
-- [ ] Active mortgage (settledAt is null) distinguished from historical/settled mortgages
-- [ ] Each sub-entity section has an inline "Add" button (modal or inline form — no separate page)
-- [ ] Transaction list is paginated and sortable by date
-- [ ] Edit button on Overview opens a direct edit form
-- [ ] Delete asset button with confirmation modal (soft delete)
-- [ ] Breadcrumb: Assets → [Property Code]
-- [ ] Edit and Delete controls visible only to owner, managing user, or admins
+- [x] `/assets/:id` page with tabbed sections: **Overview**, **Financials** (purchase info + valuation history + mortgage history), **Shareholding**, **Transactions**, **Documents** (placeholder for ITER-5)
+- [x] Current valuation (most recent by date) prominently displayed in Overview
+- [x] Active mortgage (settledAt is null) distinguished from historical/settled mortgages
+- [x] Each sub-entity section has an inline "Add" button (modal or inline form — no separate page)
+- [x] Transaction list is paginated and sortable by date
+- [x] Edit button on Overview opens a direct edit form
+- [x] Delete asset button with confirmation modal (soft delete)
+- [x] Breadcrumb: Assets → [Property Code]
+- [x] Edit and Delete controls visible only to owner, managing user, or admins
 
 ---
 
@@ -1195,11 +1195,11 @@ system_settings
 **Size:** M · **Estimate:** 3–5 days · **Priority:** High · **Target:** 15 May 2026
 
 **Acceptance Criteria:**
-- [ ] New Prisma models: `PropertyAsset`, `ValuationEntry`, `MortgageEntry`, `ShareholdingEntry`, `TransactionEntry`
-- [ ] Sequential property code generator implemented (DB sequence or application-level with uniqueness retry)
-- [ ] Appropriate indexes added (ownerId, managedByUserId, deletedAt, postCode on PropertyAsset)
-- [ ] All migrations committed; `db:migrate` and `db:seed` pass
-- [ ] Prisma client regenerated
+- [x] New Prisma models: `PropertyAsset`, `ValuationEntry`, `MortgageEntry`, `ShareholdingEntry`, `TransactionEntry`
+- [x] Sequential property code generator implemented (DB sequence or application-level with uniqueness retry)
+- [x] Appropriate indexes added (ownerId, managedByUserId, deletedAt, postCode on PropertyAsset)
+- [x] All migrations committed; `db:migrate` and `db:seed` pass
+- [x] Prisma client regenerated
 
 ---
 
@@ -1212,9 +1212,9 @@ system_settings
 **Size:** S · **Estimate:** 1–2 days · **Priority:** Medium · **Target:** 28 May 2026
 
 **Acceptance Criteria:**
-- [ ] API tests for all property asset and sub-entity endpoints
-- [ ] Access control tests: owner vs non-owner vs admin scenarios
-- [ ] Test count does not decrease from Iteration 3 baseline
+- [x] API tests for all property asset and sub-entity endpoints
+- [x] Access control tests: owner vs non-owner vs admin scenarios
+- [x] Test count does not decrease from Iteration 3 baseline
 
 ---
 
@@ -1222,12 +1222,12 @@ system_settings
 
 | Story | Title | Size | Priority | Target | Status |
 |---|---|---|---|---|---|
-| ITER-4-001 | Asset Register Navigation & Listing Page | M | High | 19 May 2026 | ⬜ |
-| ITER-4-002 | Property Asset API (CRUD + Access Control) | XL | High | 21 May 2026 | ⬜ |
-| ITER-4-003 | Property Registration Wizard | L | High | 23 May 2026 | ⬜ |
-| ITER-4-004 | Property Asset Detail Page | L | High | 26 May 2026 | ⬜ |
-| ITER-4-005 | Database Schema — Iteration 4 | M | High | 15 May 2026 | ⬜ |
-| ITER-4-006 | CI Updates — Iteration 4 | S | Medium | 28 May 2026 | ⬜ |
+| ITER-4-001 | Asset Register Navigation & Listing Page | M | High | 19 May 2026 | ✅ |
+| ITER-4-002 | Property Asset API (CRUD + Access Control) | XL | High | 21 May 2026 | ✅ |
+| ITER-4-003 | Property Registration Wizard | L | High | 23 May 2026 | ✅ |
+| ITER-4-004 | Property Asset Detail Page | L | High | 26 May 2026 | ✅ |
+| ITER-4-005 | Database Schema — Iteration 4 | M | High | 15 May 2026 | ✅ |
+| ITER-4-006 | CI Updates — Iteration 4 | S | Medium | 28 May 2026 | ✅ |
 
 ---
 

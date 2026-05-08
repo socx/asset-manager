@@ -91,13 +91,6 @@ export default function DocumentsPage() {
     }
   }
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return null;
-    return sortOrder === 'asc' 
-      ? <ArrowUpIcon className="h-4 w-4 inline ml-1" />
-      : <ArrowDownIcon className="h-4 w-4 inline ml-1" />;
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Header */}
@@ -116,25 +109,48 @@ export default function DocumentsPage() {
         </button>
       </div>
 
-      {/* Filter toolbar */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Filter:</span>
-        <div className="flex gap-2">
-          {(['all', 'images', 'pdfs'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                filterType === type
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              {type === 'all' && 'All'}
-              {type === 'images' && 'Images'}
-              {type === 'pdfs' && 'PDFs'}
-            </button>
-          ))}
+      {/* Filter & Sort toolbar */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Filter:</span>
+          <div className="flex gap-2">
+            {(['all', 'images', 'pdfs'] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  filterType === type
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                {type === 'all' && 'All'}
+                {type === 'images' && 'Images'}
+                {type === 'pdfs' && 'PDFs'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Sort by:</span>
+          <div className="flex gap-2">
+            {(['filename', 'size', 'createdAt'] as const).map((field) => (
+              <button
+                key={field}
+                onClick={() => toggleSort(field)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                  sortField === field
+                    ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {field === 'filename' && 'Name'}
+                {field === 'size' && 'Size'}
+                {field === 'createdAt' && 'Date'}
+                {sortField === field && (sortOrder === 'asc' ? <ArrowUpIcon className="w-3 h-3" /> : <ArrowDownIcon className="w-3 h-3" />)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -152,88 +168,88 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* Documents table */}
+      {/* Documents grid */}
       {filteredAndSortedDocs.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                  <button 
-                    onClick={() => toggleSort('filename')}
-                    className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200"
-                  >
-                    Filename <SortIcon field="filename" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                  <button 
-                    onClick={() => toggleSort('size')}
-                    className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200"
-                  >
-                    Size <SortIcon field="size" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Uploaded By</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                  <button 
-                    onClick={() => toggleSort('createdAt')}
-                    className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200"
-                  >
-                    Uploaded At <SortIcon field="createdAt" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-              {filteredAndSortedDocs.map((d) => (
-                <tr key={d.id} onClick={() => setViewerDoc(d)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-sky-600 dark:text-sky-400">
-                    <div className="flex items-center gap-3">
-                      {d.mimeType.startsWith('image/') ? (
-                        <ThumbnailImage
-                          thumbnailUrl={`/api/v1/documents/${d.id}/thumbnail`}
-                          rawUrl={`/api/v1/documents/${d.id}/raw`}
-                          lqip={(d.metadata && (d.metadata as any).thumbnailLqip) ?? undefined}
-                          alt={d.filename}
-                          className="w-10 h-8 rounded"
-                        />
-                      ) : (
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-medium">
-                          {d.mimeType.split('/')[1]?.toUpperCase() || 'FILE'}
-                        </span>
-                      )}
-                      <span className="font-medium truncate">{d.title || d.filename}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{d.mimeType}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {(d.size / 1024).toFixed(1)} KB
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {d.uploadedBy ? `${d.uploadedBy.firstName} ${d.uploadedBy.lastName}` : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredAndSortedDocs.map((d) => (
+            <div
+              key={d.id}
+              onClick={() => setViewerDoc(d)}
+              className="relative group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700 hover:border-sky-500 dark:hover:border-sky-400 cursor-pointer"
+            >
+              {/* Thumbnail */}
+              <div className="relative aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                {d.mimeType.startsWith('image/') ? (
+                  <ThumbnailImage
+                    thumbnailUrl={`/api/v1/documents/${d.id}/thumbnail`}
+                    rawUrl={`/api/v1/documents/${d.id}/raw`}
+                    lqip={(d.metadata && (d.metadata as any).thumbnailLqip) ?? undefined}
+                    alt={d.filename}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                ) : d.mimeType === 'application/pdf' ? (
+                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/20 dark:to-red-800/20">
+                    <svg className="w-12 h-12 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8.707 7.707a1 1 0 0 0-1.414-1.414L5.636 7.879a2 2 0 1 0 2.828 2.828l1.243-1.243a1 1 0 0 0-1.414-1.414l-.586.586zM12.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+                      <path fillRule="evenodd" d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/20 dark:to-blue-800/20">
+                    <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+                
+                {/* Badge overlay */}
+                <div className="absolute top-2 right-2">
+                  {d.isPublic ? (
+                    <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold rounded">
+                      Public
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded">
+                      Private
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card content */}
+              <div className="p-3">
+                {/* Filename */}
+                <p className="font-semibold text-sm text-gray-900 dark:text-white truncate mb-1">
+                  {d.title || d.filename}
+                </p>
+
+                {/* File type and size */}
+                <div className="flex items-center justify-between mb-2 text-xs text-gray-600 dark:text-gray-400">
+                  <span className="uppercase">{d.mimeType.split('/')[1]?.toUpperCase() || 'FILE'}</span>
+                  <span>{(d.size / 1024 / 1024).toFixed(2)} MB</span>
+                </div>
+
+                {/* Upload date and uploader */}
+                <div className="space-y-1 pb-3 border-t border-gray-200 dark:border-gray-700 pt-2">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {new Date(d.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    {d.isPublic && (
-                      <span className="inline-block px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded">
-                        Public
-                      </span>
-                    )}
-                    {!d.isPublic && (
-                      <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 text-xs font-medium rounded">
-                        Private
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </p>
+                  {d.uploadedBy && (
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                      by <span className="font-medium">{d.uploadedBy.firstName} {d.uploadedBy.lastName}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Action button */}
+                <button
+                  className="w-full px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded transition-colors"
+                >
+                  View
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
       {showUpload && (

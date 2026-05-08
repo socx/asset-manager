@@ -13,6 +13,7 @@ import ProfilePage from './pages/ProfilePage';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
 import RegisterAssetWizard from './pages/RegisterAssetWizard';
+import DocumentsPage from './pages/DocumentsPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import SettingsPage from './pages/admin/SettingsPage';
@@ -83,6 +84,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <AppShell title="Assets">
                 <AssetsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/documents"
+          element={
+            <ProtectedRoute>
+              <AppShell title="Documents">
+                <DocumentsPage />
               </AppShell>
             </ProtectedRoute>
           }

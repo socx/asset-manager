@@ -40,7 +40,7 @@ describe('DocumentsPage', () => {
   it('renders empty state when no documents returned', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/no documents found/i)).toBeInTheDocument();
+      expect(screen.getByText(/no documents yet/i)).toBeInTheDocument();
     });
   });
 
@@ -62,8 +62,8 @@ describe('DocumentsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('file.pdf')).toBeInTheDocument();
     });
-    expect(screen.getByText('application/pdf')).toBeInTheDocument();
-    expect(screen.getByText(/123 bytes/)).toBeInTheDocument();
+    expect(screen.getByText('PDF')).toBeInTheDocument();
+    expect(screen.getByText(/0\.00 MB/)).toBeInTheDocument();
     expect(screen.getByText(/Alice A/)).toBeInTheDocument();
   });
 });

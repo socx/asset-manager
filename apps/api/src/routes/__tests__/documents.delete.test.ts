@@ -31,9 +31,7 @@ jest.mock('bullmq', () => ({
   Queue: jest.fn(() => ({ add: jest.fn().mockResolvedValue({ id: 'job-1' }) })),
 }));
 
-// @ts-ignore
 import { prisma } from '@asset-manager/db';
-// @ts-ignore
 import { verifyAccessToken } from '../../lib/jwt';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;

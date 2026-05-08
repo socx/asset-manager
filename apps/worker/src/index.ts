@@ -2,10 +2,6 @@ import { Worker } from 'bullmq';
 import Redis from 'ioredis';
 import nodemailer from 'nodemailer';
 import type { EmailJob } from './types';
-import path from 'path';
-import fs from 'fs';
-import sharp from 'sharp';
-import { prisma } from '@asset-manager/db';
 import type { Job } from 'bullmq';
 // require CommonJS helper so tests can import without TS transform
 // eslint-disable-next-line @typescript-eslint/no-var-requires

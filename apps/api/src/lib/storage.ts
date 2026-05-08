@@ -4,7 +4,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { logger } from './logger';
 
 export interface StorageProvider {
@@ -37,7 +37,7 @@ export class LocalStorageProvider implements StorageProvider {
   async uploadFile(buffer: Buffer, filename: string): Promise<string> {
     // Use UUID-based storage path (opaque, prevents path traversal)
     const ext = path.extname(filename);
-    const storagePath = `${uuidv4()}${ext}`;
+    const storagePath = `${randomUUID()}${ext}`;
     const filePath = path.join(this.basePath, storagePath);
 
     try {
@@ -90,6 +90,7 @@ export class S3StorageProvider implements StorageProvider {
 
     // Initialize S3 client - AWS SDK v3 is optional dependency
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { S3Client } = require('@aws-sdk/client-s3');
       this.s3Client = new S3Client({
         region,
@@ -110,9 +111,10 @@ export class S3StorageProvider implements StorageProvider {
 
     // Use UUID-based storage path (opaque, prevents path traversal)
     const ext = path.extname(filename);
-    const key = `${uuidv4()}${ext}`;
+    const key = `${randomUUID()}${ext}`;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { PutObjectCommand } = require('@aws-sdk/client-s3');
       await this.s3Client.send(
         new PutObjectCommand({
@@ -136,6 +138,7 @@ export class S3StorageProvider implements StorageProvider {
     const key = this.extractS3Key(storagePath);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { GetObjectCommand } = require('@aws-sdk/client-s3');
       const response = await this.s3Client.send(
         new GetObjectCommand({
@@ -164,6 +167,7 @@ export class S3StorageProvider implements StorageProvider {
     const key = this.extractS3Key(storagePath);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
       await this.s3Client.send(
         new DeleteObjectCommand({
@@ -185,6 +189,7 @@ export class S3StorageProvider implements StorageProvider {
     const key = this.extractS3Key(storagePath);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { HeadObjectCommand } = require('@aws-sdk/client-s3');
       await this.s3Client.send(
         new HeadObjectCommand({

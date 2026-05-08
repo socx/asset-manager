@@ -76,6 +76,7 @@ model User {
   auditLogs           AuditLog[]
   ownedProperties     PropertyAsset[]      @relation("PropertyOwner")
   managedProperties   PropertyAsset[]      @relation("PropertyManagerUser")
+  documentsOwned      Document[]           @relation("DocumentOwner")
   documentsUploaded   Document[]           @relation("UserUploads")
 
   @@map("users")
@@ -208,6 +209,7 @@ model LookupItem {
   mortgageTypeEntries          MortgageEntry[]    @relation("MortgageType")
   mortgagePaymentStatusEntries MortgageEntry[]    @relation("MortgagePaymentStatus")
   transactionCategoryEntries   TransactionEntry[] @relation("TransactionCategory")
+  documentTypeDocuments        Document[]         @relation("DocumentType")
 
   @@unique([type, name])
   @@index([type, isActive, sortOrder])
@@ -359,21 +361,32 @@ model TransactionEntry {
 /// content is handled by the storage layer (S3/local) and referenced
 /// via `storageKey`.
 model Document {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  filename   String
-  storageKey String   @map("storage_key")
-  mimeType   String   @map("mime_type")
-  size       Int
-  uploadedBy String?  @map("uploaded_by") @db.Uuid
-  assetId    String?  @map("asset_id") @db.Uuid
-  metadata   Json?
-  isPublic   Boolean  @default(false) @map("is_public")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  fileName      String    @map("file_name")
+  storagePath   String    @map("storage_path")
+  mimeType      String    @map("mime_type")
+  fileSizeBytes Int       @map("file_size_bytes")
+  documentTypeId String?  @map("document_type_id") @db.Uuid
+  ownerId       String?   @map("owner_id") @db.Uuid
+  uploadedById  String?   @map("uploaded_by_id") @db.Uuid
+  relatedAssetId String?  @map("related_asset_id") @db.Uuid
+  description   String?
+  metadata      Json?
+  isPublic      Boolean   @default(false) @map("is_public")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
-  uploadedByUser User?         @relation("UserUploads", fields: [uploadedBy], references: [id], onDelete: SetNull)
-  asset          PropertyAsset? @relation("AssetDocuments", fields: [assetId], references: [id], onDelete: Cascade)
+  documentType   LookupItem?    @relation("DocumentType", fields: [documentTypeId], references: [id], onDelete: SetNull)
+  owner          User?          @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  uploadedByUser User?          @relation("UserUploads", fields: [uploadedById], references: [id], onDelete: SetNull)
+  relatedAsset   PropertyAsset? @relation("AssetDocuments", fields: [relatedAssetId], references: [id], onDelete: Cascade)
 
-  @@index([assetId])
-  @@index([uploadedBy])
+  @@index([ownerId])
+  @@index([uploadedById])
+  @@index([relatedAssetId])
+  @@index([documentTypeId])
+  @@index([deletedAt])
   @@map("documents")
 }

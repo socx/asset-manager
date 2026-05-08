@@ -61,15 +61,21 @@ describe('Documents API', () => {
     const now = new Date().toISOString();
     const created = {
       id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
-      filename: 'doc.pdf',
-      storageKey: 's3://bucket/doc.pdf',
+      title: 'doc.pdf',
+      fileName: 'doc.pdf',
+      storagePath: 's3://bucket/doc.pdf',
       mimeType: 'application/pdf',
-      size: 12345,
-      uploadedBy: USER_ID,
-      assetId: null,
+      fileSizeBytes: 12345,
+      ownerId: USER_ID,
+      uploadedById: USER_ID,
+      relatedAssetId: null,
+      documentTypeId: null,
+      description: null,
       metadata: null,
       isPublic: false,
       createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
     };
 
     (mockPrisma.document.create as jest.Mock).mockResolvedValue(created);
@@ -81,6 +87,6 @@ describe('Documents API', () => {
       .expect(201);
 
     expect(res.body).toHaveProperty('document');
-    expect(res.body.document).toMatchObject({ id: created.id, filename: created.filename });
+    expect(res.body.document).toMatchObject({ id: created.id, filename: created.fileName });
   });
 });

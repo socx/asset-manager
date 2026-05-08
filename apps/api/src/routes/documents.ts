@@ -38,6 +38,27 @@ const upload = multer({
   },
 });
 
+function toApiDocument(doc: any) {
+  return {
+    id: doc.id,
+    title: doc.title,
+    filename: doc.fileName,
+    storageKey: doc.storagePath,
+    mimeType: doc.mimeType,
+    size: doc.fileSizeBytes,
+    ownerId: doc.ownerId,
+    uploadedBy: doc.uploadedById,
+    assetId: doc.relatedAssetId,
+    documentTypeId: doc.documentTypeId,
+    description: doc.description,
+    metadata: doc.metadata,
+    isPublic: doc.isPublic,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+    deletedAt: doc.deletedAt,
+  };
+}
+
 // List documents (optional filter by assetId)
 documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const actor = req.user;
@@ -52,7 +73,7 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
 
   try {
     const rows = await prisma.document.findMany({
-      where: { ...(assetId ? { assetId } : {}) },
+      where: { ...(assetId ? { relatedAssetId: assetId } : {}), deletedAt: null },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
@@ -61,7 +82,7 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
 
-    res.json({ documents: items, nextCursor: hasMore ? items[items.length - 1].id : null });
+    res.json({ documents: items.map(toApiDocument), nextCursor: hasMore ? items[items.length - 1].id : null });
   } catch (err) {
     logger.error('[documents] list error', { err });
     res.status(500).json({ message: 'Failed to list documents' });
@@ -84,7 +105,7 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
-    res.json({ document: doc });
+    res.json({ document: toApiDocument(doc) });
   } catch (err) {
     logger.error('[documents] get error', { err });
     res.status(500).json({ message: 'Failed to fetch document' });
@@ -101,11 +122,14 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
   }
 
   const body = req.body as {
+    title?: string;
     filename?: string;
     storageKey?: string;
     mimeType?: string;
     size?: number;
     assetId?: string | null;
+    documentTypeId?: string | null;
+    description?: string | null;
     metadata?: Record<string, unknown> | null;
     isPublic?: boolean;
   };
@@ -118,18 +142,22 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
   try {
     const created = await prisma.document.create({
       data: {
-        filename: body.filename,
-        storageKey: body.storageKey,
+        title: body.title ?? body.filename,
+        fileName: body.filename,
+        storagePath: body.storageKey,
         mimeType: body.mimeType,
-        size: body.size,
-        uploadedBy: actor.sub ?? null,
-        assetId: body.assetId ?? null,
+        fileSizeBytes: body.size,
+        ownerId: actor.sub ?? null,
+        uploadedById: actor.sub ?? null,
+        relatedAssetId: body.assetId ?? null,
+        documentTypeId: body.documentTypeId ?? null,
+        description: body.description ?? null,
         metadata: body.metadata as any,
         isPublic: body.isPublic ?? false,
       },
     });
 
-    res.status(201).json({ document: created });
+    res.status(201).json({ document: toApiDocument(created) });
   } catch (err) {
     logger.error('[documents] create error', { err });
     res.status(500).json({ message: 'Failed to create document record' });
@@ -161,12 +189,14 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
     // for image files to be processed asynchronously by the worker.
     const created = await prisma.document.create({
       data: {
-        filename: file.originalname,
-        storageKey,
+        title: file.originalname,
+        fileName: file.originalname,
+        storagePath: storageKey,
         mimeType: file.mimetype,
-        size: file.size,
-        uploadedBy: actor.sub ?? null,
-        assetId: assetId ?? null,
+        fileSizeBytes: file.size,
+        ownerId: actor.sub ?? null,
+        uploadedById: actor.sub ?? null,
+        relatedAssetId: assetId ?? null,
         metadata: undefined as any,
         isPublic: false,
       },
@@ -186,7 +216,7 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
       logger.error('[documents] failed to enqueue thumbnail job', { err: qErr });
     }
 
-    res.status(201).json({ document: created });
+    res.status(201).json({ document: toApiDocument(created) });
   } catch (err) {
     logger.error('[documents] upload error', { err });
     res.status(500).json({ message: 'Failed to store document' });
@@ -203,7 +233,7 @@ documentsRouter.get('/:id/raw', async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const filePath = path.resolve(process.cwd(), doc.storageKey);
+    const filePath = path.resolve(process.cwd(), doc.storagePath);
     if (!fs.existsSync(filePath)) {
       res.status(404).json({ message: 'File not found' });
       return;
@@ -236,7 +266,7 @@ documentsRouter.get('/:id/thumbnail', async (req: Request, res: Response): Promi
     }
 
     // Fallback to raw file when no thumbnail exists
-    const filePath = path.resolve(process.cwd(), doc.storageKey);
+    const filePath = path.resolve(process.cwd(), doc.storagePath);
     if (!fs.existsSync(filePath)) {
       res.status(404).json({ message: 'File not found' });
       return;

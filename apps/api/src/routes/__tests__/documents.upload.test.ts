@@ -1,6 +1,4 @@
 import request from 'supertest';
-import path from 'path';
-import fs from 'fs';
 import { createApp } from '../../app';
 
 jest.mock('@asset-manager/db', () => ({
@@ -18,15 +16,12 @@ jest.mock('../../lib/jwt', () => ({
 describe('Documents upload endpoint', () => {
   const app = createApp();
   it('accepts file upload', async () => {
-    const filePath = path.join(__dirname, '..', '__fixtures__', 'test.pdf');
-    // ensure fixture exists
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, 'PDF-DATA');
+    const validPdf = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]);
 
     const res = await request(app)
       .post('/api/v1/documents/upload')
       .set('Authorization', 'Bearer token')
-      .attach('file', filePath)
+      .attach('file', validPdf, 'test.pdf')
       .expect(201);
 
     expect(res.body).toHaveProperty('document');

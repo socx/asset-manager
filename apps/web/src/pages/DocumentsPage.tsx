@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { listDocuments, type DocumentListItem } from '../api/documents';
+import { listDocuments, uploadFile, type DocumentListItem } from '../api/documents';
+import { useQueryClient } from '@tanstack/react-query';
 import AppShell from '../components/AppShell';
 import ProtectedRoute from '../components/ProtectedRoute';
 
@@ -21,17 +22,38 @@ function DocumentRow({ doc, onClick }: { doc: DocumentListItem; onClick: () => v
 export default function DocumentsPage() {
   const navigate = useNavigate();
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['documents', cursor],
     queryFn: () => listDocuments({ cursor, limit: 20 }),
   });
 
   const docs = data?.documents ?? [];
+  const [showUpload, setShowUpload] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      await uploadFile(f, null);
+      // refresh list
+      queryClient.invalidateQueries(['documents']);
+      setShowUpload(false);
+    } catch (err) {
+      // best-effort: log and keep modal open
+      // eslint-disable-next-line no-console
+      console.error('upload failed', err);
+      alert('Upload failed');
+    }
+  }
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-semibold">Documents</h1>
-        <button onClick={() => navigate('/assets/new')} className="px-3 py-2 rounded-lg bg-sky-600 text-white">Upload</button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowUpload(true)} className="px-3 py-2 rounded-lg bg-sky-600 text-white">Upload</button>
+        </div>
       </div>
 
       {isLoading && <p className="py-8 text-center text-gray-500">Loading documents…</p>}
@@ -57,6 +79,19 @@ export default function DocumentsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Simple upload modal */}
+      {showUpload && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
+            <input ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg" onChange={handleFileChange} />
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setShowUpload(false)} className="px-3 py-2 mr-2">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 

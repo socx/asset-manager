@@ -40,3 +40,21 @@ export function createDocument(payload: {
     body: JSON.stringify(payload),
   });
 }
+
+export async function uploadFile(file: File, assetId?: string | null) {
+  const fd = new FormData();
+  fd.append('file', file);
+  if (assetId) fd.append('assetId', assetId);
+
+  const res = await fetch(`/api/v1/documents/upload`, {
+    method: 'POST',
+    body: fd,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: 'Upload failed' }));
+    throw new Error(err.message ?? 'Upload failed');
+  }
+
+  return (await res.json()) as { document: DocumentListItem };
+}

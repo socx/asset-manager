@@ -1,4 +1,7 @@
 import { Router, type Response } from 'express';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 import { prisma } from '@asset-manager/db';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth';
 import { logger } from '../lib/logger';
@@ -7,6 +10,28 @@ export const documentsRouter = Router();
 
 // All document routes require authentication for now
 documentsRouter.use(requireAuth);
+
+// --- File upload storage (development local storage)
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'documents');
+try { fs.mkdirSync(UPLOAD_DIR, { recursive: true }); } catch { /* ignore */ }
+
+const storage = multer.diskStorage({
+  destination: (_req: any, _file: any, cb: any) => cb(null, UPLOAD_DIR),
+  filename: (_req: any, file: any, cb: any) => {
+    const safe = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    cb(null, safe);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (_req: any, file: any, cb: any) => {
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Invalid file type'));
+  },
+});
 
 // List documents (optional filter by assetId)
 documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -62,6 +87,7 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
 });
 
 // Create document metadata (storage handled separately)
+// POST /documents (metadata-only) still supported
 documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const actor = req.user;
   if (!actor) {
@@ -102,5 +128,42 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
   } catch (err) {
     logger.error('[documents] create error', { err });
     res.status(500).json({ message: 'Failed to create document record' });
+  }
+});
+
+// Upload file and create document record in one step
+documentsRouter.post('/upload', upload.single('file'), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const actor = req.user;
+  if (!actor) {
+    res.status(401).json({ message: 'Authentication required.' });
+    return;
+  }
+
+  const file = (req as any).file;
+  const assetId = typeof req.body['assetId'] === 'string' ? req.body['assetId'] : null;
+  if (!file) {
+    res.status(400).json({ message: 'File required' });
+    return;
+  }
+
+  try {
+    const storageKey = `uploads/documents/${file.filename}`;
+    const created = await prisma.document.create({
+      data: {
+        filename: file.originalname,
+        storageKey,
+        mimeType: file.mimetype,
+        size: file.size,
+        uploadedBy: actor.sub ?? null,
+        assetId: assetId ?? null,
+        metadata: undefined,
+        isPublic: false,
+      },
+    });
+
+    res.status(201).json({ document: created });
+  } catch (err) {
+    logger.error('[documents] upload error', { err });
+    res.status(500).json({ message: 'Failed to store document' });
   }
 });

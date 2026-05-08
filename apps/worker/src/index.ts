@@ -2,6 +2,14 @@ import { Worker } from 'bullmq';
 import Redis from 'ioredis';
 import nodemailer from 'nodemailer';
 import type { EmailJob } from './types';
+import path from 'path';
+import fs from 'fs';
+import sharp from 'sharp';
+import { prisma } from '@asset-manager/db';
+import type { Job } from 'bullmq';
+// require CommonJS helper so tests can import without TS transform
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { processThumbnailJob } = require('./thumbnailProcessor');
 
 const env = {
   REDIS_URL: process.env['REDIS_URL'] ?? 'redis://localhost:6379',
@@ -164,6 +172,31 @@ emailWorker.on('failed', (job, err) => {
 });
 
 console.log('[worker] Started — listening for jobs on Redis queue "email"');
+
+// Thumbnail worker: generates thumbnails for image documents and updates DB
+const thumbnailWorker = new Worker(
+  'thumbnails',
+  async (job: Job) => {
+    console.log(`[worker] Processing thumbnail job (id: ${job.id})`);
+    try {
+      await processThumbnailJob(job.data as any);
+      console.log(`[worker] Generated thumbnail for job ${job.id}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[worker] Thumbnail job failed: ${msg}`);
+      throw err;
+    }
+  },
+  { connection },
+);
+
+thumbnailWorker.on('completed', (job) => {
+  console.log(`[worker] Thumbnail job ${job.id} completed`);
+});
+
+thumbnailWorker.on('failed', (job, err) => {
+  console.error(`[worker] Thumbnail job ${job?.id} failed:`, err?.message ?? err);
+});
 
 const shutdown = async (signal: string) => {
   console.log(`[worker] ${signal} received — shutting down gracefully`);

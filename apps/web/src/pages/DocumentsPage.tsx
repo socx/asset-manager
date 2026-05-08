@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listDocuments, uploadFileWithProgress, type DocumentListItem } from '../api/documents';
 import { useQueryClient } from '@tanstack/react-query';
 import AppShell from '../components/AppShell';
+import ThumbnailImage from '../components/ThumbnailImage';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function DocumentsPage() {
@@ -85,7 +86,13 @@ export default function DocumentsPage() {
                   <td className="px-4 py-3 text-sm text-sky-600">
                     <div className="flex items-center gap-2">
                       {d.mimeType.startsWith('image/') ? (
-                        <img src={`/api/v1/documents/${d.id}/raw`} alt={d.filename} className="w-12 h-8 object-cover rounded" />
+                        <ThumbnailImage
+                          thumbnailUrl={`/api/v1/documents/${d.id}/thumbnail`}
+                          rawUrl={`/api/v1/documents/${d.id}/raw`}
+                          lqip={(d.metadata && (d.metadata as any).thumbnailLqip) ?? undefined}
+                          alt={d.filename}
+                          className="w-12 h-8"
+                        />
                       ) : (
                         <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">{d.mimeType.split('/')[1]}</span>
                       )}

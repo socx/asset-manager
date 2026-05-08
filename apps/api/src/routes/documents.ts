@@ -7,7 +7,6 @@ import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAut
 import { logger } from '../lib/logger';
 import { Queue } from 'bullmq';
 import { redis } from '../lib/redis';
-import { type Request } from 'express';
 import { storageProvider, LocalStorageProvider } from '../lib/storage';
 import { requireDocumentViewAccess, requireDocumentModifyAccess } from '../lib/documentAccessControl';
 
@@ -203,11 +202,6 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
     // Enqueue thumbnail generation for image types — best-effort, don't block response
     try {
       if (file.mimetype && file.mimetype.startsWith('image/')) {
-        // For S3 storage, pass the full S3 path; for local, pass relative path
-        const thumbnailContext = storageProvider instanceof LocalStorageProvider 
-          ? storagePath 
-          : storagePath;
-          
         await thumbnailQueue.add('generate_thumbnail', {
           documentId: created.id,
           storageKey: storagePath,

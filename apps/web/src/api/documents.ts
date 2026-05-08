@@ -2,15 +2,21 @@ import { apiRequest } from './auth';
 
 export interface DocumentListItem {
   id: string;
-  filename: string;
-  storageKey: string;
+  title?: string; // optional, from backend
+  filename: string; // backward compat (maps to fileName)
+  storageKey: string; // backward compat (maps to storagePath)
   mimeType: string;
-  size: number;
-  uploadedBy?: { id: string; firstName: string; lastName: string } | null;
-  assetId?: string | null;
+  size: number; // backward compat (maps to fileSizeBytes)
+  ownerId?: string | null;
+  uploadedBy?: { id: string; firstName: string; lastName: string } | null; // maps to uploadedById
+  assetId?: string | null; // backward compat (maps to relatedAssetId)
+  documentTypeId?: string | null;
+  description?: string | null;
   metadata?: Record<string, unknown> | null;
   isPublic: boolean;
   createdAt: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface ListDocumentsResponse {

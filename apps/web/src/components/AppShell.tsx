@@ -156,6 +156,7 @@ const adminNav: Array<NavItem | NavGroup> = [
 const appNav: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: HomeIcon },
   { label: 'Assets', to: '/assets', icon: BuildingOffice2Icon },
+  { label: 'Documents', to: '/documents', icon: DocumentTextIcon },
 ];
 
 function isGroup(item: NavItem | NavGroup): item is NavGroup {

@@ -110,6 +110,41 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
   }
 });
 
+// Update document metadata (currently supports linking/unlinking asset)
+documentsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const id = String(req.params.id);
+
+  if (!(await requireDocumentModifyAccess(req, res, id))) {
+    return;
+  }
+
+  const body = req.body as { assetId?: string | null };
+  if (!Object.prototype.hasOwnProperty.call(body, 'assetId')) {
+    res.status(400).json({ message: 'No updatable fields provided' });
+    return;
+  }
+
+  try {
+    const existing = await prisma.document.findUnique({ where: { id } });
+    if (!existing || existing.deletedAt) {
+      res.status(404).json({ message: 'Document not found' });
+      return;
+    }
+
+    const updated = await prisma.document.update({
+      where: { id },
+      data: {
+        relatedAssetId: body.assetId ?? null,
+      },
+    });
+
+    res.json({ document: toApiDocument(updated) });
+  } catch (err) {
+    logger.error('[documents] patch error', { err });
+    res.status(500).json({ message: 'Failed to update document' });
+  }
+});
+
 // Create document metadata (storage handled separately)
 // POST /documents (metadata-only) still supported
 documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {

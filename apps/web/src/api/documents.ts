@@ -47,6 +47,13 @@ export function createDocument(payload: {
   });
 }
 
+export function updateDocument(documentId: string, payload: { assetId?: string | null }) {
+  return apiRequest<{ document: DocumentListItem }>(`/documents/${documentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function uploadFile(file: File, assetId?: string | null) {
   const fd = new FormData();
   fd.append('file', file);

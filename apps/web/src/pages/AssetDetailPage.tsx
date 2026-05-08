@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeftIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, DocumentTextIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import {
   createMortgage,
@@ -19,6 +19,8 @@ import {
 } from '../api/assets';
 import { useWizardLookups } from '../hooks/useWizardLookups';
 import { requireAccessToken, formatCurrency } from '../lib/utils';
+import { listDocuments, updateDocument, uploadFileWithProgress, type DocumentListItem } from '../api/documents';
+import ThumbnailImage from '../components/ThumbnailImage';
 
 const ADMIN_ROLES = new Set(['super_admin', 'system_admin']);
 
@@ -108,6 +110,9 @@ export default function AssetDetailPage() {
     amount: number | string;
     categoryId: string;
   }>>([]);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [documentUploadPct, setDocumentUploadPct] = useState<number | null>(null);
+  const [viewerDoc, setViewerDoc] = useState<DocumentListItem | null>(null);
 
   const detailQuery = useQuery({
     queryKey: ['asset-detail', id],
@@ -119,6 +124,12 @@ export default function AssetDetailPage() {
     queryKey: ['asset-transactions', id, transactionCursor],
     queryFn: () => listTransactions(String(id), { cursor: transactionCursor, limit: 15 }, requireAccessToken(accessToken)),
     enabled: Boolean(id) && activeTab === 'transactions',
+  });
+
+  const documentsQuery = useQuery({
+    queryKey: ['asset-documents', id],
+    queryFn: () => listDocuments({ assetId: String(id), limit: 50 }),
+    enabled: Boolean(id) && activeTab === 'documents',
   });
 
   const asset = detailQuery.data?.asset;
@@ -289,6 +300,14 @@ export default function AssetDetailPage() {
     },
   });
 
+  const unlinkDocumentMutation = useMutation({
+    mutationFn: (documentId: string) => updateDocument(documentId, { assetId: null }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asset-documents', id] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+
   const updatePurchaseMutation = useMutation({
     mutationFn: () => updatePropertyAsset(String(id), {
       purchaseDate: purchaseForm.purchaseDate ? new Date(purchaseForm.purchaseDate).toISOString() : undefined,
@@ -303,6 +322,21 @@ export default function AssetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['asset-detail', id] });
     },
   });
+
+  async function handleDocumentUpload(file?: File): Promise<void> {
+    if (!file || !id) return;
+    try {
+      setDocumentUploadPct(0);
+      await uploadFileWithProgress(file, (pct) => setDocumentUploadPct(pct), id);
+      queryClient.invalidateQueries({ queryKey: ['asset-documents', id] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setDocumentUploadPct(null);
+      setShowDocumentUpload(false);
+    } catch {
+      setDocumentUploadPct(null);
+      alert('Upload failed');
+    }
+  }
 
   if (detailQuery.isLoading) {
     return <p className="py-8 text-sm text-gray-500 dark:text-gray-400" role="status">Loading asset detail...</p>;
@@ -724,8 +758,121 @@ export default function AssetDetailPage() {
           )}
 
           {activeTab === 'documents' && (
-            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-              Documents module arrives in ITER-5.
+            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Documents linked to this asset
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowDocumentUpload(true)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700"
+                >
+                  <PlusIcon className="h-4 w-4" /> Upload Document
+                </button>
+              </div>
+
+              {documentsQuery.isLoading && <p role="status">Loading documents...</p>}
+              {documentsQuery.isError && <p className="text-red-600 dark:text-red-400">Failed to load documents.</p>}
+
+              {!documentsQuery.isLoading && (documentsQuery.data?.documents.length ?? 0) === 0 && (
+                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-5 text-center">
+                  <DocumentTextIcon className="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500" />
+                  <p className="mt-2 text-sm">No linked documents yet.</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Upload your first file for this asset.</p>
+                </div>
+              )}
+
+              {(documentsQuery.data?.documents.length ?? 0) > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {documentsQuery.data?.documents.map((doc) => (
+                    <div key={doc.id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+                      <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
+                        {doc.mimeType.startsWith('image/') ? (
+                          <ThumbnailImage
+                            thumbnailUrl={`/api/v1/documents/${doc.id}/thumbnail`}
+                            rawUrl={`/api/v1/documents/${doc.id}/file`}
+                            lqip={(doc.metadata && (doc.metadata as any).thumbnailLqip) ?? undefined}
+                            alt={doc.filename}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full grid place-items-center text-gray-500 dark:text-gray-400">
+                            <DocumentTextIcon className="h-12 w-12" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 space-y-2">
+                        <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{doc.title || doc.filename}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">{doc.mimeType.split('/')[1] || 'file'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Uploaded {new Date(doc.createdAt).toLocaleDateString('en-GB')}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">By {doc.uploadedBy ? `${doc.uploadedBy.firstName} ${doc.uploadedBy.lastName}` : 'Unknown'}</p>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setViewerDoc(doc)}
+                            className="flex-1 rounded bg-sky-600 px-2 py-1 text-xs font-medium text-white hover:bg-sky-700"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => unlinkDocumentMutation.mutate(doc.id)}
+                            disabled={unlinkDocumentMutation.isPending}
+                            className="rounded border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
+                          >
+                            Unlink
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showDocumentUpload && (
+                <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
+                  <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">Upload Document</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">This document will be linked to asset {asset.code}.</p>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/png,image/jpeg"
+                      onChange={(e) => void handleDocumentUpload(e.target.files?.[0])}
+                      className="block w-full text-sm"
+                    />
+                    {documentUploadPct !== null && (
+                      <div className="space-y-1">
+                        <div className="h-2 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                          <div className="h-2 bg-sky-600" style={{ width: `${documentUploadPct}%` }} />
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-300">Uploading {documentUploadPct}%</p>
+                      </div>
+                    )}
+                    <div className="flex justify-end">
+                      <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600" onClick={() => setShowDocumentUpload(false)}>Close</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewerDoc && (
+                <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center">
+                  <div className="w-full max-w-4xl h-[80vh] rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{viewerDoc.filename}</p>
+                      <button type="button" className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded" onClick={() => setViewerDoc(null)}>Close</button>
+                    </div>
+                    <div className="h-[calc(80vh-70px)]">
+                      {viewerDoc.mimeType.startsWith('image/') ? (
+                        <img src={`/api/v1/documents/${viewerDoc.id}/file`} alt={viewerDoc.filename} className="max-h-full mx-auto" />
+                      ) : (
+                        <iframe src={`/api/v1/documents/${viewerDoc.id}/file`} title={viewerDoc.filename} className="w-full h-full" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

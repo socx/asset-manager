@@ -7,6 +7,7 @@ jest.mock('@asset-manager/db', () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
@@ -88,5 +89,43 @@ describe('Documents API', () => {
 
     expect(res.body).toHaveProperty('document');
     expect(res.body.document).toMatchObject({ id: created.id, filename: created.fileName });
+  });
+
+  test('PATCH /api/v1/documents/:id unlinks document from asset', async () => {
+    const now = new Date().toISOString();
+    const existing = {
+      id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+      title: 'doc.pdf',
+      fileName: 'doc.pdf',
+      storagePath: 's3://bucket/doc.pdf',
+      mimeType: 'application/pdf',
+      fileSizeBytes: 12345,
+      ownerId: USER_ID,
+      uploadedById: USER_ID,
+      relatedAssetId: 'asset-1',
+      documentTypeId: null,
+      description: null,
+      metadata: null,
+      isPublic: false,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    };
+    const updated = { ...existing, relatedAssetId: null };
+
+    (mockPrisma.document.findUnique as jest.Mock).mockResolvedValue(existing);
+    (mockPrisma.document.update as jest.Mock).mockResolvedValue(updated);
+
+    const res = await request(app)
+      .patch('/api/v1/documents/aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ assetId: null })
+      .expect(200);
+
+    expect(res.body.document.assetId).toBeNull();
+    expect(mockPrisma.document.update).toHaveBeenCalledWith({
+      where: { id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' },
+      data: { relatedAssetId: null },
+    });
   });
 });

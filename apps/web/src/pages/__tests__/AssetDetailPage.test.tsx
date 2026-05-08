@@ -109,6 +109,41 @@ function makeFetchMock() {
     const url = String(input);
     const method = init?.method ?? 'GET';
 
+    if (url.includes('/api/v1/documents?assetId=asset-1')) {
+      return {
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              id: 'doc-1',
+              title: 'Tenancy Agreement',
+              filename: 'tenancy-agreement.pdf',
+              storageKey: 'doc-1.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
+              uploadedBy: { id: 'owner-1', firstName: 'Alice', lastName: 'Owner' },
+              assetId: 'asset-1',
+              isPublic: false,
+              createdAt: '2024-07-01T00:00:00.000Z',
+            },
+          ],
+          nextCursor: null,
+        }),
+      } as Response;
+    }
+
+    if (url.endsWith('/api/v1/documents/doc-1') && method === 'PATCH') {
+      return {
+        ok: true,
+        json: async () => ({
+          document: {
+            id: 'doc-1',
+            assetId: null,
+          },
+        }),
+      } as Response;
+    }
+
     if (url.includes('/api/v1/assets/properties/asset-1/transactions')) {
       return {
         ok: true,
@@ -240,10 +275,28 @@ describe('AssetDetailPage', () => {
     expect(rows.length).toBeGreaterThan(1);
   });
 
-  it('shows documents placeholder tab', async () => {
+  it('shows linked documents in documents tab', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Documents' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Documents' }));
-    expect(screen.getByText(/ITER-5/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Tenancy Agreement/i)).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Upload Document/i })).toBeInTheDocument();
+  });
+
+  it('unlinks a document from the asset documents tab', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Documents' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Documents' }));
+    await waitFor(() => expect(screen.getByText(/Tenancy Agreement/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /Unlink/i }));
+
+    await waitFor(() => {
+      const patchCalls = vi
+        .mocked(fetch)
+        .mock.calls
+        .filter(([url, init]) => String(url).endsWith('/api/v1/documents/doc-1') && (init as RequestInit)?.method === 'PATCH');
+      expect(patchCalls.length).toBeGreaterThan(0);
+    });
   });
 });

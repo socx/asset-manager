@@ -58,3 +58,34 @@ export async function uploadFile(file: File, assetId?: string | null) {
 
   return (await res.json()) as { document: DocumentListItem };
 }
+
+export function uploadFileWithProgress(file: File, onProgress: (pct: number) => void, assetId?: string | null) {
+  return new Promise<{ document: DocumentListItem }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+    fd.append('file', file);
+    if (assetId) fd.append('assetId', assetId);
+
+    xhr.open('POST', '/api/v1/documents/upload');
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) {
+        const pct = Math.round((ev.loaded / ev.total) * 100);
+        onProgress(pct);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data);
+        } catch (e) {
+          reject(new Error('Invalid JSON response'));
+        }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send(fd);
+  });
+}

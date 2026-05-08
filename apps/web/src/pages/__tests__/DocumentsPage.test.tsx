@@ -53,7 +53,7 @@ describe('DocumentsPage', () => {
       size: 123,
       uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
       assetId: null,
-      metadata: null,
+        metadata: null,
       isPublic: false,
       createdAt: new Date().toISOString(),
     };

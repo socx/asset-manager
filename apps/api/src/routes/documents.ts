@@ -5,6 +5,8 @@ import multer from 'multer';
 import { prisma } from '@asset-manager/db';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth';
 import { logger } from '../lib/logger';
+import sharp from 'sharp';
+import { type Request } from 'express';
 
 export const documentsRouter = Router();
 
@@ -14,6 +16,8 @@ documentsRouter.use(requireAuth);
 // --- File upload storage (development local storage)
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'documents');
 try { fs.mkdirSync(UPLOAD_DIR, { recursive: true }); } catch { /* ignore */ }
+const THUMB_DIR = path.join(UPLOAD_DIR, 'thumbnails');
+try { fs.mkdirSync(THUMB_DIR, { recursive: true }); } catch { /* ignore */ }
 
 const storage = multer.diskStorage({
   destination: (_req: any, _file: any, cb: any) => cb(null, UPLOAD_DIR),
@@ -148,6 +152,21 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
 
   try {
     const storageKey = `uploads/documents/${file.filename}`;
+
+    // generate thumbnail for image types
+    let metadata: Record<string, unknown> | undefined = undefined;
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+      try {
+        const thumbFilename = `thumb-${file.filename.replace(/\.[^.]+$/, '')}.jpg`;
+        const thumbPath = path.join(THUMB_DIR, thumbFilename);
+        await sharp((file as any).path).resize({ width: 600 }).jpeg({ quality: 80 }).toFile(thumbPath);
+        metadata = { thumbnailKey: `uploads/documents/thumbnails/${thumbFilename}` };
+      } catch (thumbErr) {
+        logger.error('[documents] thumbnail generation failed', { err: thumbErr });
+        metadata = undefined;
+      }
+    }
+
     const created = await prisma.document.create({
       data: {
         filename: file.originalname,
@@ -156,7 +175,7 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
         size: file.size,
         uploadedBy: actor.sub ?? null,
         assetId: assetId ?? null,
-        metadata: undefined,
+        metadata: metadata as any,
         isPublic: false,
       },
     });
@@ -165,5 +184,28 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
   } catch (err) {
     logger.error('[documents] upload error', { err });
     res.status(500).json({ message: 'Failed to store document' });
+  }
+});
+
+// Serve raw file content for a document id (development convenience)
+documentsRouter.get('/:id/raw', async (req: Request, res: Response): Promise<void> => {
+  const id = String(req.params.id);
+  try {
+    const doc = await prisma.document.findUnique({ where: { id } });
+    if (!doc) {
+      res.status(404).json({ message: 'Document not found' });
+      return;
+    }
+
+    const filePath = path.resolve(process.cwd(), doc.storageKey);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ message: 'File not found' });
+      return;
+    }
+
+    res.sendFile(filePath);
+  } catch (err) {
+    logger.error('[documents] raw get error', { err });
+    res.status(500).json({ message: 'Failed to serve file' });
   }
 });

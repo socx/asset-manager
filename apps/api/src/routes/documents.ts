@@ -8,28 +8,21 @@ import { logger } from '../lib/logger';
 import { Queue } from 'bullmq';
 import { redis } from '../lib/redis';
 import { type Request } from 'express';
+import { storageProvider, LocalStorageProvider } from '../lib/storage';
+import { requireDocumentViewAccess, requireDocumentModifyAccess } from '../lib/documentAccessControl';
 
 export const documentsRouter = Router();
 
 // All document routes require authentication for now
 documentsRouter.use(requireAuth);
 
-// --- File upload storage (development local storage)
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'documents');
-try { fs.mkdirSync(UPLOAD_DIR, { recursive: true }); } catch { /* ignore */ }
-const THUMB_DIR = path.join(UPLOAD_DIR, 'thumbnails');
+// --- File upload storage (in-memory for abstracted storage provider support)
+// Temporary local directory for thumbnails
+const THUMB_DIR = path.join(process.cwd(), 'uploads', 'documents', 'thumbnails');
 try { fs.mkdirSync(THUMB_DIR, { recursive: true }); } catch { /* ignore */ }
 
-const storage = multer.diskStorage({
-  destination: (_req: any, _file: any, cb: any) => cb(null, UPLOAD_DIR),
-  filename: (_req: any, file: any, cb: any) => {
-    const safe = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    cb(null, safe);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
   fileFilter: (_req: any, file: any, cb: any) => {
     const allowed = ['application/pdf', 'image/png', 'image/jpeg'];
@@ -98,6 +91,11 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
   }
 
   const id = String(req.params.id);
+
+  if (!(await requireDocumentViewAccess(req, res, id))) {
+    return;
+  }
+
   try {
     const doc = await prisma.document.findUnique({ where: { id } });
     if (!doc) {
@@ -183,15 +181,15 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
   }
 
   try {
-    const storageKey = `uploads/documents/${file.filename}`;
+    // Upload file to storage provider
+    const storagePath = await storageProvider.uploadFile(file.buffer, file.originalname);
 
-    // We create the DB record immediately and enqueue thumbnail generation
-    // for image files to be processed asynchronously by the worker.
+    // Create DB record with storage path
     const created = await prisma.document.create({
       data: {
         title: file.originalname,
         fileName: file.originalname,
-        storagePath: storageKey,
+        storagePath,
         mimeType: file.mimetype,
         fileSizeBytes: file.size,
         ownerId: actor.sub ?? null,
@@ -202,14 +200,19 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
       },
     });
 
-    // enqueue thumbnail generation for image types — best-effort, don't block response
+    // Enqueue thumbnail generation for image types — best-effort, don't block response
     try {
       if (file.mimetype && file.mimetype.startsWith('image/')) {
+        // For S3 storage, pass the full S3 path; for local, pass relative path
+        const thumbnailContext = storageProvider instanceof LocalStorageProvider 
+          ? storagePath 
+          : storagePath;
+          
         await thumbnailQueue.add('generate_thumbnail', {
           documentId: created.id,
-          storageKey,
-          filePath: path.join(UPLOAD_DIR, file.filename),
+          storageKey: storagePath,
           mimeType: file.mimetype,
+          storageProvider: process.env.STORAGE_PROVIDER || 'local',
         });
       }
     } catch (qErr) {
@@ -223,9 +226,14 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
   }
 });
 
-// Serve raw file content for a document id (development convenience)
-documentsRouter.get('/:id/raw', async (req: Request, res: Response): Promise<void> => {
+// Serve raw file content for a document id (with access control)
+documentsRouter.get('/:id/raw', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const id = String(req.params.id);
+  
+  if (!(await requireDocumentViewAccess(req, res, id))) {
+    return;
+  }
+
   try {
     const doc = await prisma.document.findUnique({ where: { id } });
     if (!doc) {
@@ -233,13 +241,27 @@ documentsRouter.get('/:id/raw', async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const filePath = path.resolve(process.cwd(), doc.storagePath);
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ message: 'File not found' });
-      return;
+    // For local storage, serve file directly; for S3, fetch and stream
+    if (storageProvider instanceof LocalStorageProvider) {
+      const filePath = path.resolve(process.cwd(), doc.storagePath);
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+        return;
+      }
+    } else {
+      // S3 or other provider - download and stream
+      try {
+        const buffer = await storageProvider.downloadFile(doc.storagePath);
+        res.setHeader('Content-Type', doc.mimeType);
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
+        return;
+      } catch (err) {
+        logger.error('[documents] failed to download from storage', { err });
+      }
     }
 
-    res.sendFile(filePath);
+    res.status(404).json({ message: 'File not found' });
   } catch (err) {
     logger.error('[documents] raw get error', { err });
     res.status(500).json({ message: 'Failed to serve file' });
@@ -247,8 +269,13 @@ documentsRouter.get('/:id/raw', async (req: Request, res: Response): Promise<voi
 });
 
 // Serve thumbnail if available (generated by worker), otherwise fall back to raw
-documentsRouter.get('/:id/thumbnail', async (req: Request, res: Response): Promise<void> => {
+documentsRouter.get('/:id/thumbnail', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const id = String(req.params.id);
+  
+  if (!(await requireDocumentViewAccess(req, res, id))) {
+    return;
+  }
+
   try {
     const doc = await prisma.document.findUnique({ where: { id } });
     if (!doc) {
@@ -266,15 +293,74 @@ documentsRouter.get('/:id/thumbnail', async (req: Request, res: Response): Promi
     }
 
     // Fallback to raw file when no thumbnail exists
-    const filePath = path.resolve(process.cwd(), doc.storagePath);
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ message: 'File not found' });
-      return;
+    if (storageProvider instanceof LocalStorageProvider) {
+      const filePath = path.resolve(process.cwd(), doc.storagePath);
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+        return;
+      }
+    } else {
+      // S3 or other provider - download and stream
+      try {
+        const buffer = await storageProvider.downloadFile(doc.storagePath);
+        res.setHeader('Content-Type', doc.mimeType);
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
+        return;
+      } catch (err) {
+        logger.error('[documents] failed to download from storage', { err });
+      }
     }
 
-    res.sendFile(filePath);
+    res.status(404).json({ message: 'File not found' });
   } catch (err) {
     logger.error('[documents] thumbnail get error', { err });
     res.status(500).json({ message: 'Failed to serve thumbnail' });
+  }
+});
+
+// Delete document (soft delete with optional file cleanup)
+documentsRouter.delete('/:id', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const id = String(req.params.id);
+
+  if (!(await requireDocumentModifyAccess(req, res, id))) {
+    return;
+  }
+
+  try {
+    const doc = await prisma.document.findUnique({ where: { id } });
+    if (!doc || doc.deletedAt) {
+      res.status(404).json({ message: 'Document not found' });
+      return;
+    }
+
+    // Soft delete: set deletedAt timestamp
+    const updated = await prisma.document.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    // Async cleanup of stored file (don't block response)
+    setImmediate(async (): Promise<void> => {
+      try {
+        await storageProvider.deleteFile(doc.storagePath);
+        // Also delete thumbnail if it exists
+        if (doc.metadata && (doc.metadata as any).thumbnailKey) {
+          const thumbKey = (doc.metadata as any).thumbnailKey;
+          try {
+            fs.unlinkSync(thumbKey);
+          } catch {
+            // ignore
+          }
+        }
+      } catch (err) {
+        logger.error('[documents] async file cleanup failed', { err, documentId: id });
+      }
+    });
+
+    res.json({ document: toApiDocument(updated) });
+  } catch (err) {
+    logger.error('[documents] delete error', { err });
+    res.status(500).json({ message: 'Failed to delete document' });
   }
 });

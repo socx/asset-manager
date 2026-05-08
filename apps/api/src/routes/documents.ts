@@ -21,7 +21,7 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
   const cursor = typeof req.query['cursor'] === 'string' ? req.query['cursor'] : undefined;
 
   try {
-    const rows = await (prisma as any).document.findMany({
+    const rows = await prisma.document.findMany({
       where: { ...(assetId ? { assetId } : {}) },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -46,9 +46,9 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
     return;
   }
 
-  const id = req.params.id;
+  const id = String(req.params.id);
   try {
-    const doc = await (prisma as any).document.findUnique({ where: { id } });
+    const doc = await prisma.document.findUnique({ where: { id } });
     if (!doc) {
       res.status(404).json({ message: 'Document not found' });
       return;
@@ -85,7 +85,7 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
   }
 
   try {
-    const created = await (prisma as any).document.create({
+    const created = await prisma.document.create({
       data: {
         filename: body.filename,
         storageKey: body.storageKey,
@@ -93,7 +93,7 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
         size: body.size,
         uploadedBy: actor.sub ?? null,
         assetId: body.assetId ?? null,
-        metadata: body.metadata ?? null,
+        metadata: body.metadata as any,
         isPublic: body.isPublic ?? false,
       },
     });

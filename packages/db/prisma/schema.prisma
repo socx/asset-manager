@@ -76,6 +76,7 @@ model User {
   auditLogs           AuditLog[]
   ownedProperties     PropertyAsset[]      @relation("PropertyOwner")
   managedProperties   PropertyAsset[]      @relation("PropertyManagerUser")
+  documentsUploaded   Document[]           @relation("UserUploads")
 
   @@map("users")
 }
@@ -274,6 +275,7 @@ model PropertyAsset {
   mortgages        MortgageEntry[]
   shareholdings    ShareholdingEntry[]
   transactions     TransactionEntry[]
+  documents        Document[] @relation("AssetDocuments")
 
   @@index([ownerId])
   @@index([managedByUserId])
@@ -368,8 +370,8 @@ model Document {
   isPublic   Boolean  @default(false) @map("is_public")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  uploadedByUser User?         @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
-  asset          PropertyAsset? @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  uploadedByUser User?         @relation("UserUploads", fields: [uploadedBy], references: [id], onDelete: SetNull)
+  asset          PropertyAsset? @relation("AssetDocuments", fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([assetId])
   @@index([uploadedBy])

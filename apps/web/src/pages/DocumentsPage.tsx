@@ -1,21 +1,40 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listDocuments, uploadFileWithProgress, type DocumentListItem } from '../api/documents';
 import { useQueryClient } from '@tanstack/react-query';
 import AppShell from '../components/AppShell';
 import ThumbnailImage from '../components/ThumbnailImage';
 import ProtectedRoute from '../components/ProtectedRoute';
-import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
+import { ArrowUpIcon, ArrowDownIcon, Bars3Icon, TableCellsIcon } from '@heroicons/react/24/outline';
 
 type SortField = 'filename' | 'size' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
+type ViewMode = 'grid' | 'table';
 
 export default function DocumentsPage() {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [filterType, setFilterType] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('docs-view-mode');
+      return (saved as ViewMode) || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
   const queryClient = useQueryClient();
+  
+  // Persist view mode preference
+  useEffect(() => {
+    try {
+      localStorage.setItem('docs-view-mode', viewMode);
+    } catch {
+      // ignore
+    }
+  }, [viewMode]);
   
   const { data, isLoading, isError } = useQuery({
     queryKey: ['documents', cursor],
@@ -27,9 +46,22 @@ export default function DocumentsPage() {
   // Client-side sorting and filtering
   const filteredAndSortedDocs = docs
     .filter((doc) => {
-      if (filterType === 'all') return true;
-      if (filterType === 'images') return doc.mimeType.startsWith('image/');
-      if (filterType === 'pdfs') return doc.mimeType === 'application/pdf';
+      // Type filter
+      if (filterType === 'all') {
+        // all types
+      } else if (filterType === 'images') {
+        if (!doc.mimeType.startsWith('image/')) return false;
+      } else if (filterType === 'pdfs') {
+        if (doc.mimeType !== 'application/pdf') return false;
+      }
+
+      // Search filter (title/filename)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = (doc.title || doc.filename || '').toLowerCase().includes(q);
+        return titleMatch;
+      }
+
       return true;
     })
     .sort((a, b) => {
@@ -101,12 +133,36 @@ export default function DocumentsPage() {
             {filteredAndSortedDocs.length} document{filteredAndSortedDocs.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button 
-          onClick={() => setShowUpload(true)} 
-          className="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-700 transition-colors"
-        >
-          + Upload Document
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode(viewMode === 'grid' ? 'table' : 'grid')}
+            title={`Switch to ${viewMode === 'grid' ? 'table' : 'grid'} view`}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            {viewMode === 'grid' ? (
+              <TableCellsIcon className="w-5 h-5" />
+            ) : (
+              <Bars3Icon className="w-5 h-5" />
+            )}
+          </button>
+          <button 
+            onClick={() => setShowUpload(true)} 
+            className="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-700 transition-colors"
+          >
+            + Upload Document
+          </button>
+        </div>
+      </div>
+
+      {/* Search bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search documents by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+        />
       </div>
 
       {/* Filter & Sort toolbar */}
@@ -169,7 +225,7 @@ export default function DocumentsPage() {
       )}
 
       {/* Documents grid */}
-      {filteredAndSortedDocs.length > 0 && (
+      {filteredAndSortedDocs.length > 0 && viewMode === 'grid' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredAndSortedDocs.map((d) => (
             <div
@@ -250,6 +306,58 @@ export default function DocumentsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Documents table */}
+      {filteredAndSortedDocs.length > 0 && viewMode === 'table' && (
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  <button 
+                    onClick={() => toggleSort('filename')}
+                    className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200"
+                  >
+                    Title {sortField === 'filename' && (sortOrder === 'asc' ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />)}
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Uploaded By</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  <button 
+                    onClick={() => toggleSort('createdAt')}
+                    className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200"
+                  >
+                    Uploaded {sortField === 'createdAt' && (sortOrder === 'asc' ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />)}
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Size</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+              {filteredAndSortedDocs.map((d) => (
+                <tr key={d.id} onClick={() => setViewerDoc(d)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-4 py-3 text-sm font-medium text-sky-600 dark:text-sky-400">
+                    {d.title || d.filename}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {d.mimeType.split('/')[1]?.toUpperCase() || 'FILE'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {d.uploadedBy ? `${d.uploadedBy.firstName} ${d.uploadedBy.lastName}` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    {new Date(d.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {(d.size / 1024 / 1024).toFixed(2)} MB
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
       {showUpload && (

@@ -26,6 +26,7 @@ import {
 import { listSettingsHandler, updateSettingHandler } from './settings';
 import { listAuditLogsHandler } from './auditLogs';
 import { listSystemLogsHandler } from './systemLogs';
+import { emitTestSystemLogHandler } from './testSystemLog';
 import { activeUsersHandler, pageActivityHandler, healthHandler } from './dashboard';
 import {
   listLookupItemsHandler,
@@ -74,6 +75,8 @@ adminRouter.get('/audit-logs', listAuditLogsHandler);
 
 // System logs
 adminRouter.get('/system-logs', listSystemLogsHandler);
+// Debug endpoint: emits a test error that should be persisted to system_logs
+adminRouter.post('/system-logs/test', emitTestSystemLogHandler);
 
 // Dashboard (ITER-2-007/008/009)
 adminRouter.get('/dashboard/active-users',  activeUsersHandler);

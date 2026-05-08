@@ -5,6 +5,7 @@ import { telemetryRouter } from './telemetry';
 import { lookupRouter } from './lookup';
 import { companiesRouter } from './companies';
 import { assetsRouter } from './assets';
+import { documentsRouter } from './documents';
 
 export const router = Router();
 
@@ -25,3 +26,6 @@ router.use('/companies', companiesRouter);
 
 // Property assets (ITER-4-002) — any authenticated user with scoped access
 router.use('/assets', assetsRouter);
+
+// Documents (ITER-5) — document metadata and listing
+router.use('/documents', documentsRouter);

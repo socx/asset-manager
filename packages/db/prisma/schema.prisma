@@ -351,3 +351,27 @@ model TransactionEntry {
   @@index([assetId, date])
   @@map("transaction_entries")
 }
+
+/// Documents uploaded to the system. `assetId` is optional — linkage
+/// to a PropertyAsset is established when provided. Storage of binary
+/// content is handled by the storage layer (S3/local) and referenced
+/// via `storageKey`.
+model Document {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  filename   String
+  storageKey String   @map("storage_key")
+  mimeType   String   @map("mime_type")
+  size       Int
+  uploadedBy String?  @map("uploaded_by") @db.Uuid
+  assetId    String?  @map("asset_id") @db.Uuid
+  metadata   Json?
+  isPublic   Boolean  @default(false) @map("is_public")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  uploadedByUser User?         @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+  asset          PropertyAsset? @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([uploadedBy])
+  @@map("documents")
+}

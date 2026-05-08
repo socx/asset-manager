@@ -4,6 +4,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { logger } from './logger';
 
 export interface StorageProvider {
@@ -34,8 +35,10 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   async uploadFile(buffer: Buffer, filename: string): Promise<string> {
-    const safe = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const filePath = path.join(this.basePath, safe);
+    // Use UUID-based storage path (opaque, prevents path traversal)
+    const ext = path.extname(filename);
+    const storagePath = `${uuidv4()}${ext}`;
+    const filePath = path.join(this.basePath, storagePath);
 
     try {
       fs.writeFileSync(filePath, buffer);
@@ -105,7 +108,9 @@ export class S3StorageProvider implements StorageProvider {
       throw new Error('S3 storage not configured');
     }
 
-    const key = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    // Use UUID-based storage path (opaque, prevents path traversal)
+    const ext = path.extname(filename);
+    const key = `${uuidv4()}${ext}`;
 
     try {
       const { PutObjectCommand } = require('@aws-sdk/client-s3');

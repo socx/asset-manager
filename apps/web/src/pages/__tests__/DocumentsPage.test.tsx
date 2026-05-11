@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import DocumentsPage from '../DocumentsPage';
@@ -21,9 +21,13 @@ function renderPage() {
 }
 
 const mockListDocuments = vi.spyOn(docsApi, 'listDocuments');
+const mockDeleteDocument = vi.spyOn(docsApi, 'deleteDocument');
+const mockListDocumentTypes = vi.spyOn(docsApi, 'listDocumentTypes');
 
 beforeEach(() => {
   mockListDocuments.mockResolvedValue({ documents: [], nextCursor: null });
+  mockDeleteDocument.mockResolvedValue({ document: {} as never });
+  mockListDocumentTypes.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -65,5 +69,75 @@ describe('DocumentsPage', () => {
     expect(screen.getByText('PDF')).toBeInTheDocument();
     expect(screen.getByText(/0\.00 MB/)).toBeInTheDocument();
     expect(screen.getByText(/Alice A/)).toBeInTheDocument();
+  });
+
+  it('opens viewer modal with metadata panel and download action', async () => {
+    const d = {
+      id: 'd2',
+      filename: 'viewer.pdf',
+      title: 'Viewer PDF',
+      storageKey: 's3://b/viewer.pdf',
+      mimeType: 'application/pdf',
+      size: 4096,
+      uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
+      assetId: 'asset-1',
+      description: 'Lease copy',
+      metadata: null,
+      isPublic: false,
+      createdAt: new Date().toISOString(),
+    };
+    mockListDocuments.mockResolvedValue({ documents: [d], nextCursor: null });
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Viewer PDF')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByText('View')[0]);
+
+    expect(screen.getByText(/metadata/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /download/i })).toBeInTheDocument();
+    expect(screen.getByText(/lease copy/i)).toBeInTheDocument();
+  });
+
+  it('shows delete confirmation dialog from card actions', async () => {
+    const d = {
+      id: 'd3',
+      filename: 'delete-me.pdf',
+      storageKey: 's3://b/delete-me.pdf',
+      mimeType: 'application/pdf',
+      size: 1234,
+      uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
+      assetId: null,
+      metadata: null,
+      isPublic: false,
+      createdAt: new Date().toISOString(),
+    };
+    mockListDocuments.mockResolvedValue({ documents: [d], nextCursor: null });
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('delete-me.pdf')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByText('Delete')[0]);
+
+    expect(screen.getByText(/delete document/i)).toBeInTheDocument();
+    expect(screen.getByText(/soft delete/i)).toBeInTheDocument();
+  });
+
+  it('renders richer upload form fields in upload modal', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /upload document/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /upload document/i }));
+
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/document type/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/related asset/i)).toBeInTheDocument();
   });
 });

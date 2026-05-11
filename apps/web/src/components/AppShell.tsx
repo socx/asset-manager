@@ -133,6 +133,7 @@ interface NavGroup {
 
 const adminNav: Array<NavItem | NavGroup> = [
   { label: 'Dashboard', to: '/admin', icon: HomeIcon },
+  { label: 'Documents', to: '/documents', icon: DocumentTextIcon },
   {
     label: 'Settings',
     icon: Cog6ToothIcon,

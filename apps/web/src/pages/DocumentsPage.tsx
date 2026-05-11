@@ -435,6 +435,7 @@ export default function DocumentsPage() {
                   </button>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Related Asset</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Uploaded By</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   <button onClick={() => toggleSort('createdAt')} className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200">
@@ -450,6 +451,7 @@ export default function DocumentsPage() {
                 <tr key={d.id} onClick={() => setViewerDoc(d)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-sky-600 dark:text-sky-400">{d.title || d.filename}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{typeLabel(d.mimeType)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{d.assetId ?? 'Unlinked'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{d.uploadedBy ? `${d.uploadedBy.firstName} ${d.uploadedBy.lastName}` : '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(d.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatFileSize(d.size)}</td>

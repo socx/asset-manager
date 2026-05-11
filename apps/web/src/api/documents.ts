@@ -41,11 +41,14 @@ export interface UploadDocumentPayload {
   documentTypeId?: string;
 }
 
-export function listDocuments(params?: { assetId?: string; cursor?: string; limit?: number }) {
+export function listDocuments(params?: { assetId?: string; cursor?: string; limit?: number; search?: string; documentTypeId?: string; uploadedById?: string }) {
   const qs = new URLSearchParams();
   if (params?.assetId) qs.set('assetId', params.assetId);
   if (params?.cursor) qs.set('cursor', params.cursor);
   if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.search) qs.set('search', params.search);
+  if (params?.documentTypeId) qs.set('documentTypeId', params.documentTypeId);
+  if (params?.uploadedById) qs.set('uploadedById', params.uploadedById);
   return apiRequest<ListDocumentsResponse>(`/documents?${qs.toString()}`, { method: 'GET' });
 }
 

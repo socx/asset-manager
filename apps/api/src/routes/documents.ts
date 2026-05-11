@@ -40,7 +40,9 @@ function toApiDocument(doc: any) {
     mimeType: doc.mimeType,
     size: doc.fileSizeBytes,
     ownerId: doc.ownerId,
-    uploadedBy: doc.uploadedById,
+    uploadedBy: doc.uploadedByUser
+      ? { id: doc.uploadedByUser.id, firstName: doc.uploadedByUser.firstName, lastName: doc.uploadedByUser.lastName }
+      : null,
     assetId: doc.relatedAssetId,
     documentTypeId: doc.documentTypeId,
     description: doc.description,
@@ -52,7 +54,7 @@ function toApiDocument(doc: any) {
   };
 }
 
-// List documents (optional filter by assetId)
+// List documents (optional filter by assetId, search by title/type/uploader)
 documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const actor = req.user;
   if (!actor) {
@@ -60,13 +62,40 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
     return;
   }
 
+  const ADMIN_ROLES = new Set(['super_admin', 'system_admin']);
+  const isAdmin = actor.role && ADMIN_ROLES.has(actor.role);
+
   const assetId = typeof req.query['assetId'] === 'string' ? req.query['assetId'] : undefined;
+  const search = typeof req.query['search'] === 'string' ? req.query['search'].trim() : undefined;
+  const documentTypeId = typeof req.query['documentTypeId'] === 'string' ? req.query['documentTypeId'] : undefined;
+  const uploadedById = typeof req.query['uploadedById'] === 'string' ? req.query['uploadedById'] : undefined;
   const limit = Math.min(Number(req.query['limit']) || 20, 100);
   const cursor = typeof req.query['cursor'] === 'string' ? req.query['cursor'] : undefined;
 
+  // Non-admins can only see documents they own or uploaded (or public ones)
+  const accessFilter = isAdmin ? {} : {
+    OR: [
+      { ownerId: actor.sub },
+      { uploadedById: actor.sub },
+      { isPublic: true },
+    ],
+  };
+
+  const searchFilter = search
+    ? { title: { contains: search, mode: 'insensitive' as const } }
+    : {};
+
   try {
     const rows = await prisma.document.findMany({
-      where: { ...(assetId ? { relatedAssetId: assetId } : {}), deletedAt: null },
+      where: {
+        ...accessFilter,
+        ...(assetId ? { relatedAssetId: assetId } : {}),
+        ...(documentTypeId ? { documentTypeId } : {}),
+        ...(uploadedById ? { uploadedById } : {}),
+        ...searchFilter,
+        deletedAt: null,
+      },
+      include: { uploadedByUser: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),

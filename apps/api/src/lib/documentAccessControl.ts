@@ -7,28 +7,29 @@ import { type AuthenticatedRequest } from '../middleware/requireAuth';
 import { prisma } from '@asset-manager/db';
 import { logger } from './logger';
 
+const ADMIN_ROLES = new Set(['super_admin', 'system_admin']);
+
 export interface DocumentAccessContext {
   userId: string;
   documentId: string;
 }
 
 /**
- * Check if user can view a document
- * - Owner can always view
- * - Public documents can be viewed by anyone
+ * Check if user can view a document.
+ * Admins (super_admin / system_admin) can view any document.
+ * Non-admins can view if they are the owner, the uploader, or the document is public.
  */
-export async function canViewDocument(userId: string, documentId: string): Promise<boolean> {
+export async function canViewDocument(userId: string, documentId: string, userRole?: string): Promise<boolean> {
+  if (userRole && ADMIN_ROLES.has(userRole)) return true;
   try {
     const doc = await prisma.document.findUnique({
       where: { id: documentId },
-      select: { ownerId: true, isPublic: true, deletedAt: true },
+      select: { ownerId: true, uploadedById: true, isPublic: true, deletedAt: true },
     });
 
-    if (!doc || doc.deletedAt) {
-      return false; // Document not found or deleted
-    }
+    if (!doc || doc.deletedAt) return false;
 
-    return doc.ownerId === userId || doc.isPublic === true;
+    return doc.ownerId === userId || doc.uploadedById === userId || doc.isPublic === true;
   } catch (err) {
     logger.error('[access-control] canViewDocument error', { err, userId, documentId });
     return false;
@@ -36,21 +37,21 @@ export async function canViewDocument(userId: string, documentId: string): Promi
 }
 
 /**
- * Check if user can modify a document (delete, update)
- * - Only owner can modify
+ * Check if user can modify a document (delete, update).
+ * Admins can modify any document.
+ * Non-admins can modify if they are the owner or the uploader.
  */
-export async function canModifyDocument(userId: string, documentId: string): Promise<boolean> {
+export async function canModifyDocument(userId: string, documentId: string, userRole?: string): Promise<boolean> {
+  if (userRole && ADMIN_ROLES.has(userRole)) return true;
   try {
     const doc = await prisma.document.findUnique({
       where: { id: documentId },
-      select: { ownerId: true, deletedAt: true },
+      select: { ownerId: true, uploadedById: true, deletedAt: true },
     });
 
-    if (!doc || doc.deletedAt) {
-      return false; // Document not found or deleted
-    }
+    if (!doc || doc.deletedAt) return false;
 
-    return doc.ownerId === userId;
+    return doc.ownerId === userId || doc.uploadedById === userId;
   } catch (err) {
     logger.error('[access-control] canModifyDocument error', { err, userId, documentId });
     return false;
@@ -73,7 +74,7 @@ export async function requireDocumentViewAccess(
     return false;
   }
 
-  const canAccess = await canViewDocument(actor.sub, documentId);
+  const canAccess = await canViewDocument(actor.sub, documentId, actor.role);
   if (!canAccess) {
     res.status(404).json({ message: 'Document not found' });
     return false;
@@ -102,7 +103,7 @@ export async function requireDocumentModifyAccess(
   try {
     const doc = await prisma.document.findUnique({
       where: { id: documentId },
-      select: { ownerId: true, deletedAt: true },
+      select: { ownerId: true, uploadedById: true, deletedAt: true },
     });
 
     if (!doc || doc.deletedAt) {
@@ -110,8 +111,8 @@ export async function requireDocumentModifyAccess(
       return false;
     }
 
-    // Now check if user can modify (owns the document)
-    if (doc.ownerId !== actor.sub) {
+    // Now check if user can modify (owns or uploaded the document, or is admin)
+    if (doc.ownerId !== actor.sub && doc.uploadedById !== actor.sub && !(actor.role && ADMIN_ROLES.has(actor.role))) {
       res.status(403).json({ message: 'You do not have permission to modify this document' });
       return false;
     }

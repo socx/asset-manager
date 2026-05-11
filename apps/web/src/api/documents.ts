@@ -24,6 +24,23 @@ export interface ListDocumentsResponse {
   nextCursor?: string | null;
 }
 
+export interface DocumentTypeOption {
+  id: string;
+  name: string;
+}
+
+interface ListDocumentTypesResponse {
+  items: Array<{ id: string; name: string; isActive?: boolean }>;
+}
+
+export interface UploadDocumentPayload {
+  file: File;
+  assetId?: string | null;
+  title?: string;
+  description?: string;
+  documentTypeId?: string;
+}
+
 export function listDocuments(params?: { assetId?: string; cursor?: string; limit?: number }) {
   const qs = new URLSearchParams();
   if (params?.assetId) qs.set('assetId', params.assetId);
@@ -52,6 +69,23 @@ export function updateDocument(documentId: string, payload: { assetId?: string |
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+}
+
+export function deleteDocument(documentId: string) {
+  return apiRequest<{ document: DocumentListItem }>(`/documents/${documentId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function listDocumentTypes(accessToken: string): Promise<DocumentTypeOption[]> {
+  const data = await apiRequest<ListDocumentTypesResponse>('/lookup/document_type', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  return (data.items ?? [])
+    .filter((item) => item.isActive !== false)
+    .map((item) => ({ id: item.id, name: item.name }));
 }
 
 export async function uploadFile(file: File, assetId?: string | null) {
@@ -92,6 +126,41 @@ export function uploadFileWithProgress(file: File, onProgress: (pct: number) => 
           const data = JSON.parse(xhr.responseText);
           resolve(data);
         } catch (e) {
+          reject(new Error('Invalid JSON response'));
+        }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send(fd);
+  });
+}
+
+export function uploadDocumentWithProgress(payload: UploadDocumentPayload, onProgress: (pct: number) => void) {
+  return new Promise<{ document: DocumentListItem }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+
+    fd.append('file', payload.file);
+    if (payload.assetId) fd.append('assetId', payload.assetId);
+    if (payload.title?.trim()) fd.append('title', payload.title.trim());
+    if (payload.description?.trim()) fd.append('description', payload.description.trim());
+    if (payload.documentTypeId) fd.append('documentTypeId', payload.documentTypeId);
+
+    xhr.open('POST', '/api/v1/documents/upload');
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) {
+        const pct = Math.round((ev.loaded / ev.total) * 100);
+        onProgress(pct);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data);
+        } catch {
           reject(new Error('Invalid JSON response'));
         }
       } else {

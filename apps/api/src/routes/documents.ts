@@ -210,6 +210,9 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
 
   const file = (req as any).file;
   const assetId = typeof req.body['assetId'] === 'string' ? req.body['assetId'] : null;
+  const title = typeof req.body['title'] === 'string' ? req.body['title'].trim() : '';
+  const description = typeof req.body['description'] === 'string' ? req.body['description'].trim() : null;
+  const documentTypeId = typeof req.body['documentTypeId'] === 'string' ? req.body['documentTypeId'] : null;
   if (!file) {
     res.status(400).json({ message: 'File required' });
     return;
@@ -225,7 +228,7 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
     // Create DB record with storage path
     const created = await prisma.document.create({
       data: {
-        title: file.originalname,
+        title: title || file.originalname,
         fileName: file.originalname,
         storagePath,
         mimeType: file.mimetype,
@@ -233,6 +236,8 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
         ownerId: actor.sub ?? null,
         uploadedById: actor.sub ?? null,
         relatedAssetId: assetId ?? null,
+        description: description || null,
+        documentTypeId: documentTypeId || null,
         metadata: undefined as any,
         isPublic: false,
       },

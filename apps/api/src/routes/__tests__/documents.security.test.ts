@@ -151,5 +151,17 @@ describe('Documents upload security', () => {
 
     expect(uploadRes.status).toBe(401);
   });
+
+  test('rejects upload larger than 20 MB', async () => {
+    const oversizedPdf = Buffer.alloc((20 * 1024 * 1024) + 1, 0x25);
+
+    const res = await request(app)
+      .post('/api/v1/documents/upload')
+      .set('Authorization', 'Bearer token')
+      .attach('file', oversizedPdf, { filename: 'too-large.pdf', contentType: 'application/pdf' });
+
+    expect(res.status).toBe(413);
+    expect(res.body.message).toContain('20 MB');
+  });
 });
 

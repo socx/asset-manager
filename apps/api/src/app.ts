@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
+import multer from 'multer';
 import { env } from './env';
 import { logger } from './lib/logger';
 import { traceIdMiddleware } from './middleware/traceId';
@@ -64,6 +65,21 @@ export function createApp(): Application {
 
   // Global error handler — must be defined last
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        res.status(413).json({ message: 'File too large. Maximum allowed size is 20 MB.' });
+        return;
+      }
+
+      res.status(400).json({ message: err.message || 'Invalid multipart upload request.' });
+      return;
+    }
+
+    if (err.message?.startsWith('Invalid file type.')) {
+      res.status(400).json({ message: err.message });
+      return;
+    }
+
     logger.error('[api] Unhandled error', { message: err.message, stack: err.stack });
     res.status(500).json({ message: 'An unexpected error occurred. Please try again later.' });
   });

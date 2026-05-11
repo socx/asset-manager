@@ -80,10 +80,10 @@ jobs:
       - name: Run API tests with coverage + results JSON
         run: npm run test:coverage:ci --workspace=apps/api
 
-      - name: Enforce API test baseline (ITER-3)
+      - name: Enforce API test baseline (ITER-4)
         run: npm run test:count:guard --workspace=apps/api
         env:
-          ITER3_API_TEST_BASELINE: 298
+          ITER4_API_TEST_BASELINE: 298
 
       - name: Run web tests
         run: npm test --workspace=apps/web

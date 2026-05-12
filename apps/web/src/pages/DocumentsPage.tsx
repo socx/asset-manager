@@ -14,7 +14,7 @@ import PdfPreview from '../components/PdfPreview';
 import ThumbnailImage from '../components/ThumbnailImage';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuthStore } from '../store/authStore';
-import { ArrowDownIcon, ArrowUpIcon, Bars3Icon, Squares2X2Icon, TableCellsIcon } from '@heroicons/react/24/outline';
+import { ArrowDownIcon, ArrowUpIcon, Squares2X2Icon, TableCellsIcon } from '@heroicons/react/24/outline';
 
 type SortField = 'filename' | 'size' | 'createdAt';
 type SortOrder = 'asc' | 'desc';

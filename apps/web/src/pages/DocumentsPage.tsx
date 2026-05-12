@@ -10,6 +10,7 @@ import {
 } from '../api/documents';
 import { listPropertyAssets } from '../api/assets';
 import AppShell from '../components/AppShell';
+import PdfPreview from '../components/PdfPreview';
 import ThumbnailImage from '../components/ThumbnailImage';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuthStore } from '../store/authStore';
@@ -51,6 +52,9 @@ export default function DocumentsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(1);
+  const [viewerPreviewUrl, setViewerPreviewUrl] = useState<string | null>(null);
+  const [viewerPreviewError, setViewerPreviewError] = useState<string | null>(null);
+  const [viewerPreviewLoading, setViewerPreviewLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -238,6 +242,53 @@ export default function DocumentsPage() {
     if (!viewerDoc) setImageZoom(1);
   }, [viewerDoc]);
 
+  useEffect(() => {
+    if (!viewerDoc || !accessToken || viewerDoc.mimeType === 'application/pdf') {
+      setViewerPreviewUrl(null);
+      setViewerPreviewError(null);
+      setViewerPreviewLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    setViewerPreviewLoading(true);
+    setViewerPreviewError(null);
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/v1/documents/${viewerDoc.id}/file`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Preview request failed: ${res.status}`);
+        }
+
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        if (!cancelled) {
+          setViewerPreviewUrl(objectUrl);
+          setViewerPreviewLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setViewerPreviewError('Preview unavailable.');
+          setViewerPreviewUrl(null);
+          setViewerPreviewLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [viewerDoc, accessToken]);
+
   function assetOptionLabel(asset: { code: string; customAlias: string | null }): string {
     return asset.customAlias || asset.code;
   }
@@ -267,7 +318,7 @@ export default function DocumentsPage() {
           >
             {viewMode === 'grid' ? <TableCellsIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
           </button>
-          <button onClick={openUploadModal} className="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-700 transition-colors">
+          <button onClick={openUploadModal} className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700">
             + Upload Document
           </button>
         </div>
@@ -349,15 +400,19 @@ export default function DocumentsPage() {
                     rawUrl={`/api/v1/documents/${d.id}/raw`}
                     lqip={getThumbnailLqip(d)}
                     alt={d.filename}
+                    accessToken={accessToken}
+                    mimeType={d.mimeType}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 ) : d.mimeType === 'application/pdf' ? (
-                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/20 dark:to-red-800/20">
-                    <svg className="w-12 h-12 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M8.707 7.707a1 1 0 0 0-1.414-1.414L5.636 7.879a2 2 0 1 0 2.828 2.828l1.243-1.243a1 1 0 0 0-1.414-1.414l-.586.586zM12.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
-                      <path fillRule="evenodd" d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                    </svg>
-                  </div>
+                  <ThumbnailImage
+                    thumbnailUrl={`/api/v1/documents/${d.id}/file`}
+                    rawUrl={`/api/v1/documents/${d.id}/file`}
+                    alt={d.filename}
+                    accessToken={accessToken}
+                    mimeType={d.mimeType}
+                    className="w-full h-full"
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/20 dark:to-blue-800/20">
                     <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -479,7 +534,7 @@ export default function DocumentsPage() {
       {showUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-xl max-h-[90vh] overflow-auto">
-            <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
+            <h2 className="text-lg font-semibold mb-4 dark:text-white">Upload Document</h2>
             <div className="space-y-4">
               <div>
                 <label htmlFor="upload-title" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
@@ -534,7 +589,7 @@ export default function DocumentsPage() {
                 </div>
               )}
               <div className="mt-4 flex justify-end gap-2">
-                <button onClick={closeUploadModal} className="rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
+                <button onClick={closeUploadModal} className="rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800">Cancel</button>
                 <button onClick={() => void handleUploadSubmit()} className="rounded bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50" disabled={uploadPct !== null || accessibleAssetsQuery.isLoading || assetOptions.length === 0}>Upload</button>
               </div>
             </div>
@@ -549,24 +604,37 @@ export default function DocumentsPage() {
               <h3 className="font-semibold text-gray-900 dark:text-white">{viewerDoc.title || viewerDoc.filename}</h3>
               <div className="flex items-center gap-2">
                 <a href={`/api/v1/documents/${viewerDoc.id}/file`} download={viewerDoc.filename} className="rounded bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700">Download</a>
-                <button onClick={() => setViewerDoc(null)} className="rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">Close</button>
+                <button onClick={() => setViewerDoc(null)} className="rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800">Close</button>
               </div>
             </div>
             <div className="grid h-[calc(100%-3rem)] grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
               <div className="rounded border border-gray-200 p-3 dark:border-gray-700">
                 {viewerDoc.mimeType.startsWith('image/') && (
                   <div className="mb-2 flex items-center gap-2">
-                    <button onClick={() => setImageZoom((z) => clampZoom(z - 0.25))} className="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600">-</button>
-                    <button onClick={() => setImageZoom((z) => clampZoom(z + 0.25))} className="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600">+</button>
+                    <button onClick={() => setImageZoom((z) => clampZoom(z - 0.25))} className="rounded border border-gray-300 px-2 py-1 text-xs dark:border-white dark:text-white">-</button>
+                    <button onClick={() => setImageZoom((z) => clampZoom(z + 0.25))} className="rounded border border-gray-300 px-2 py-1 text-xs dark:border-white dark:text-white">+</button>
                     <span className="text-xs text-gray-600 dark:text-gray-400">Zoom: {(imageZoom * 100).toFixed(0)}%</span>
                   </div>
                 )}
                 <div className="h-[calc(100%-2rem)] overflow-auto">
-                  {viewerDoc.mimeType.startsWith('image/') ? (
-                    <img src={`/api/v1/documents/${viewerDoc.id}/file`} alt={viewerDoc.filename} className="mx-auto max-h-[70vh]" style={{ transform: `scale(${imageZoom})`, transformOrigin: 'top center' }} />
-                  ) : (
-                    <iframe src={`/api/v1/documents/${viewerDoc.id}/file`} title={viewerDoc.filename} className="h-full w-full" />
-                  )}
+                  {viewerPreviewLoading ? (
+                    <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Loading preview...</p>
+                  ) : viewerPreviewError ? (
+                    <p className="py-6 text-center text-sm text-red-600 dark:text-red-400">{viewerPreviewError}</p>
+                  ) : viewerDoc.mimeType === 'application/pdf' ? (
+                    <PdfPreview
+                      src={`/api/v1/documents/${viewerDoc.id}/file`}
+                      accessToken={accessToken}
+                      title={viewerDoc.filename}
+                      className="h-full w-full"
+                    />
+                  ) : viewerPreviewUrl ? (
+                    viewerDoc.mimeType.startsWith('image/') ? (
+                      <img src={viewerPreviewUrl} alt={viewerDoc.filename} className="mx-auto max-h-[70vh]" style={{ transform: `scale(${imageZoom})`, transformOrigin: 'top center' }} />
+                    ) : (
+                      <iframe src={viewerPreviewUrl} title={viewerDoc.filename} className="h-full w-full" />
+                    )
+                  ) : null}
                 </div>
               </div>
               <aside className="rounded border border-gray-200 p-3 text-sm dark:border-gray-700">
@@ -578,7 +646,7 @@ export default function DocumentsPage() {
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Uploaded</dt><dd>{new Date(viewerDoc.createdAt).toLocaleString()}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Visibility</dt><dd>{viewerDoc.isPublic ? 'Public' : 'Private'}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Related Asset</dt><dd>{viewerDoc.assetLabel ?? viewerDoc.assetId ?? 'Unlinked'}</dd></div>
-                  <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Document Type ID</dt><dd>{viewerDoc.documentTypeId ?? '—'}</dd></div>
+                  <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Document Type</dt><dd>{viewerDoc.documentTypeName ?? '—'}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Description</dt><dd>{viewerDoc.description ?? '—'}</dd></div>
                 </dl>
               </aside>

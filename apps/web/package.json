@@ -17,6 +17,7 @@
     "@hookform/resolvers": "^3.10.0",
     "@tanstack/react-query": "^5.67.2",
     "@tanstack/react-table": "^8.21.2",
+    "pdfjs-dist": "^5.7.284",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",

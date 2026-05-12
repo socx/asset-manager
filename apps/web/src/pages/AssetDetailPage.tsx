@@ -20,6 +20,7 @@ import {
 import { useWizardLookups } from '../hooks/useWizardLookups';
 import { requireAccessToken, formatCurrency } from '../lib/utils';
 import { listDocuments, updateDocument, uploadFileWithProgress, type DocumentListItem } from '../api/documents';
+import PdfPreview from '../components/PdfPreview';
 import ThumbnailImage from '../components/ThumbnailImage';
 
 const ADMIN_ROLES = new Set(['super_admin', 'system_admin']);
@@ -113,6 +114,9 @@ export default function AssetDetailPage() {
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [documentUploadPct, setDocumentUploadPct] = useState<number | null>(null);
   const [viewerDoc, setViewerDoc] = useState<DocumentListItem | null>(null);
+  const [viewerPreviewUrl, setViewerPreviewUrl] = useState<string | null>(null);
+  const [viewerPreviewError, setViewerPreviewError] = useState<string | null>(null);
+  const [viewerPreviewLoading, setViewerPreviewLoading] = useState(false);
 
   const detailQuery = useQuery({
     queryKey: ['asset-detail', id],
@@ -338,6 +342,53 @@ export default function AssetDetailPage() {
     }
   }
 
+  useEffect(() => {
+    if (!viewerDoc || !accessToken || viewerDoc.mimeType === 'application/pdf') {
+      setViewerPreviewUrl(null);
+      setViewerPreviewError(null);
+      setViewerPreviewLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    setViewerPreviewLoading(true);
+    setViewerPreviewError(null);
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/v1/documents/${viewerDoc.id}/file`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Preview request failed: ${res.status}`);
+        }
+
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        if (!cancelled) {
+          setViewerPreviewUrl(objectUrl);
+          setViewerPreviewLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setViewerPreviewError('Preview unavailable.');
+          setViewerPreviewUrl(null);
+          setViewerPreviewLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [viewerDoc, accessToken]);
+
   if (detailQuery.isLoading) {
     return <p className="py-8 text-sm text-gray-500 dark:text-gray-400" role="status">Loading asset detail...</p>;
   }
@@ -440,7 +491,7 @@ export default function AssetDetailPage() {
               <textarea className="sm:col-span-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.description} onChange={(e) => setOverviewForm((s) => ({ ...s, description: e.target.value }))} placeholder="Description" rows={3} />
             </div>
             <div className="flex gap-2 justify-end">
-              <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600" onClick={() => setShowEditOverview(false)}>Cancel</button>
+              <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => setShowEditOverview(false)}>Cancel</button>
               <button type="button" className="px-3 py-1.5 text-sm rounded-lg bg-sky-600 text-white" onClick={() => updateOverviewMutation.mutate()} disabled={updateOverviewMutation.isPending}>Save</button>
             </div>
           </div>
@@ -794,7 +845,18 @@ export default function AssetDetailPage() {
                             rawUrl={`/api/v1/documents/${doc.id}/file`}
                             lqip={(doc.metadata && (doc.metadata as any).thumbnailLqip) ?? undefined}
                             alt={doc.filename}
+                            accessToken={accessToken}
+                            mimeType={doc.mimeType}
                             className="w-full h-full object-cover"
+                          />
+                        ) : doc.mimeType === 'application/pdf' ? (
+                          <ThumbnailImage
+                            thumbnailUrl={`/api/v1/documents/${doc.id}/file`}
+                            rawUrl={`/api/v1/documents/${doc.id}/file`}
+                            alt={doc.filename}
+                            accessToken={accessToken}
+                            mimeType={doc.mimeType}
+                            className="w-full h-full"
                           />
                         ) : (
                           <div className="h-full w-full grid place-items-center text-gray-500 dark:text-gray-400">
@@ -864,11 +926,24 @@ export default function AssetDetailPage() {
                       <button type="button" className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded" onClick={() => setViewerDoc(null)}>Close</button>
                     </div>
                     <div className="h-[calc(80vh-70px)]">
-                      {viewerDoc.mimeType.startsWith('image/') ? (
-                        <img src={`/api/v1/documents/${viewerDoc.id}/file`} alt={viewerDoc.filename} className="max-h-full mx-auto" />
-                      ) : (
-                        <iframe src={`/api/v1/documents/${viewerDoc.id}/file`} title={viewerDoc.filename} className="w-full h-full" />
-                      )}
+                      {viewerPreviewLoading ? (
+                        <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Loading preview...</p>
+                      ) : viewerPreviewError ? (
+                        <p className="py-6 text-center text-sm text-red-600 dark:text-red-400">{viewerPreviewError}</p>
+                      ) : viewerDoc.mimeType === 'application/pdf' ? (
+                        <PdfPreview
+                          src={`/api/v1/documents/${viewerDoc.id}/file`}
+                          accessToken={accessToken}
+                          title={viewerDoc.filename}
+                          className="h-full w-full"
+                        />
+                      ) : viewerPreviewUrl ? (
+                        viewerDoc.mimeType.startsWith('image/') ? (
+                          <img src={viewerPreviewUrl} alt={viewerDoc.filename} className="max-h-full mx-auto" />
+                        ) : (
+                          <iframe src={viewerPreviewUrl} title={viewerDoc.filename} className="w-full h-full" />
+                        )
+                      ) : null}
                     </div>
                   </div>
                 </div>

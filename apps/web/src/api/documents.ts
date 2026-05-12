@@ -12,6 +12,7 @@ export interface DocumentListItem {
   assetId?: string | null; // backward compat (maps to relatedAssetId)
   assetLabel?: string | null;
   documentTypeId?: string | null;
+  documentTypeName?: string | null;
   description?: string | null;
   metadata?: Record<string, unknown> | null;
   isPublic: boolean;

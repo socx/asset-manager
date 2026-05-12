@@ -12,6 +12,7 @@ import { requireDocumentViewAccess, requireDocumentModifyAccess } from '../lib/d
 import { validateFile, getAllowedMimeTypes } from '../lib/fileValidation';
 
 export const documentsRouter = Router();
+const documentModel = (prisma as any).document;
 
 // All document routes require authentication for now
 documentsRouter.use(requireAuth);
@@ -34,6 +35,7 @@ const upload = multer({
 const DOCUMENT_INCLUDE = {
   uploadedByUser: { select: { id: true, firstName: true, lastName: true } },
   relatedAsset: { select: { id: true, code: true, customAlias: true } },
+  documentType: { select: { id: true, name: true } },
 } as const;
 
 function toApiDocument(doc: any) {
@@ -51,6 +53,7 @@ function toApiDocument(doc: any) {
     assetId: doc.relatedAssetId,
     assetLabel: doc.relatedAsset ? (doc.relatedAsset.customAlias || doc.relatedAsset.code) : null,
     documentTypeId: doc.documentTypeId,
+    documentTypeName: doc.documentType?.name ?? null,
     description: doc.description,
     metadata: doc.metadata,
     isPublic: doc.isPublic,
@@ -108,13 +111,13 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
 
     let rows: Array<any>;
     try {
-      rows = await prisma.document.findMany({
+      rows = await documentModel.findMany({
         ...query,
         include: DOCUMENT_INCLUDE,
       });
     } catch (enrichedQueryError) {
       logger.warn('[documents] list fallback to base query', { err: enrichedQueryError });
-      rows = await prisma.document.findMany(query);
+      rows = await documentModel.findMany(query);
     }
 
     const hasMore = rows.length > limit;
@@ -142,7 +145,7 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
   }
 
   try {
-    const doc = await prisma.document.findUnique({ where: { id }, include: DOCUMENT_INCLUDE });
+    const doc = await documentModel.findUnique({ where: { id }, include: DOCUMENT_INCLUDE });
     if (!doc) {
       res.status(404).json({ message: 'Document not found' });
       return;
@@ -170,13 +173,13 @@ documentsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response): 
   }
 
   try {
-    const existing = await prisma.document.findUnique({ where: { id } });
+    const existing = await documentModel.findUnique({ where: { id } });
     if (!existing || existing.deletedAt) {
       res.status(404).json({ message: 'Document not found' });
       return;
     }
 
-    const updated = await prisma.document.update({
+    const updated = await documentModel.update({
       where: { id },
       data: {
         relatedAssetId: body.assetId ?? null,
@@ -219,7 +222,7 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
   }
 
   try {
-    const created = await prisma.document.create({
+    const created = await documentModel.create({
       data: {
         title: body.title ?? body.filename,
         fileName: body.filename,
@@ -273,7 +276,7 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
     const storagePath = await storageProvider.uploadFile(file.buffer, file.originalname);
 
     // Create DB record with storage path
-    const created = await prisma.document.create({
+    const created = await documentModel.create({
       data: {
         title: title || file.originalname,
         fileName: file.originalname,
@@ -323,7 +326,7 @@ documentsRouter.get('/:id/file', async (req: AuthenticatedRequest, res: Response
   }
 
   try {
-    const doc = await prisma.document.findUnique({ where: { id } });
+    const doc = await documentModel.findUnique({ where: { id } });
     if (!doc) {
       res.status(404).json({ message: 'Document not found' });
       return;
@@ -373,7 +376,7 @@ documentsRouter.get('/:id/thumbnail', async (req: AuthenticatedRequest, res: Res
   }
 
   try {
-    const doc = await prisma.document.findUnique({ where: { id } });
+    const doc = await documentModel.findUnique({ where: { id } });
     if (!doc) {
       res.status(404).json({ message: 'Document not found' });
       return;
@@ -424,14 +427,14 @@ documentsRouter.delete('/:id', async (req: AuthenticatedRequest, res: Response):
   }
 
   try {
-    const doc = await prisma.document.findUnique({ where: { id } });
+    const doc = await documentModel.findUnique({ where: { id } });
     if (!doc || doc.deletedAt) {
       res.status(404).json({ message: 'Document not found' });
       return;
     }
 
     // Soft delete: set deletedAt timestamp
-    const updated = await prisma.document.update({
+    const updated = await documentModel.update({
       where: { id },
       data: { deletedAt: new Date() },
     });

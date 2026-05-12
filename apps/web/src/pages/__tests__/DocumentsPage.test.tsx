@@ -91,7 +91,7 @@ describe('DocumentsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('file.pdf')).toBeInTheDocument();
     });
-    expect(screen.getByText('PDF')).toBeInTheDocument();
+    expect(screen.getAllByText('PDF').length).toBeGreaterThan(0);
     expect(screen.getByText(/0\.00 MB/)).toBeInTheDocument();
     expect(screen.getByText(/Alice A/)).toBeInTheDocument();
   });
@@ -107,6 +107,8 @@ describe('DocumentsPage', () => {
       uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
       assetId: 'asset-1',
       assetLabel: 'Riverside Flat',
+      documentTypeId: 'doc-type-1',
+      documentTypeName: 'Lease Agreement',
       description: 'Lease copy',
       metadata: null,
       isPublic: false,
@@ -124,6 +126,7 @@ describe('DocumentsPage', () => {
     expect(screen.getByText(/metadata/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /download/i })).toBeInTheDocument();
     expect(screen.getByText(/lease copy/i)).toBeInTheDocument();
+    expect(screen.getByText('Lease Agreement')).toBeInTheDocument();
   });
 
   it('shows delete confirmation dialog from card actions', async () => {

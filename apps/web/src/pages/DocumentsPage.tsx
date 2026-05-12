@@ -19,6 +19,7 @@ import { ArrowDownIcon, ArrowUpIcon, Bars3Icon, Squares2X2Icon, TableCellsIcon }
 type SortField = 'filename' | 'size' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 type ViewMode = 'grid' | 'table';
+const VIEW_MODE_KEY = 'docs-view-mode';
 
 export default function DocumentsPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -32,7 +33,7 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
-      const saved = localStorage.getItem('docs-view-mode');
+      const saved = localStorage.getItem(VIEW_MODE_KEY);
       return (saved as ViewMode) || 'grid';
     } catch {
       return 'grid';
@@ -58,7 +59,7 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('docs-view-mode', viewMode);
+      localStorage.setItem(VIEW_MODE_KEY, viewMode);
     } catch {
       // ignore
     }
@@ -302,7 +303,7 @@ export default function DocumentsPage() {
     }
   }
 
-  function switchView(mode: 'table' | 'tile') {
+  function switchView(mode: ViewMode) {
     setViewMode(mode);
     try { localStorage.setItem(VIEW_MODE_KEY, mode); } catch { /* ignore */ }
   }

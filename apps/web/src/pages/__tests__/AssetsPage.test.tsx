@@ -109,11 +109,11 @@ describe('AssetsPage', () => {
 
     // Table should be gone, tile is visible
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(localStorage.getItem('asset-view-mode')).toBe('tile');
+    expect(localStorage.getItem('asset-view-mode')).toBe('grid');
   });
 
   it('restores tile view from localStorage', async () => {
-    localStorage.setItem('asset-view-mode', 'tile');
+    localStorage.setItem('asset-view-mode', 'grid');
     mockListPropertyAssets.mockResolvedValue({ assets: [makeAsset()], nextCursor: null });
     renderPage();
     await waitFor(() => screen.getByText('PROP-001'));

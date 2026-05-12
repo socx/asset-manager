@@ -71,7 +71,7 @@ export default function PdfPreview({
           canvas.width = Math.ceil(viewport.width);
           canvas.height = Math.ceil(viewport.height);
 
-          await page.render({ canvasContext: context, viewport }).promise;
+          await page.render({ canvasContext: context, viewport, canvas }).promise;
 
           renderedPages.push({
             dataUrl: canvas.toDataURL('image/png'),

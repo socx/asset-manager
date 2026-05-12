@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import DocumentsPage from '../DocumentsPage';
 import * as docsApi from '../../api/documents';
+import * as assetsApi from '../../api/assets';
 
 vi.mock('../../store/authStore', () => ({
   useAuthStore: (selector: (s: { accessToken: string }) => unknown) => selector({ accessToken: 'test-token' }),
@@ -23,11 +24,34 @@ function renderPage() {
 const mockListDocuments = vi.spyOn(docsApi, 'listDocuments');
 const mockDeleteDocument = vi.spyOn(docsApi, 'deleteDocument');
 const mockListDocumentTypes = vi.spyOn(docsApi, 'listDocumentTypes');
+const mockListPropertyAssets = vi.spyOn(assetsApi, 'listPropertyAssets');
 
 beforeEach(() => {
   mockListDocuments.mockResolvedValue({ documents: [], nextCursor: null });
   mockDeleteDocument.mockResolvedValue({ document: {} as never });
   mockListDocumentTypes.mockResolvedValue([]);
+  mockListPropertyAssets.mockResolvedValue({
+    assets: [{
+      id: 'asset-1',
+      code: 'AST-001',
+      customAlias: 'Riverside Flat',
+      addressLine1: '1 River Road',
+      addressLine2: null,
+      city: 'London',
+      county: null,
+      postCode: 'N1 1AA',
+      country: 'UK',
+      propertyStatus: null,
+      propertyPurpose: null,
+      owner: null,
+      managedByUser: null,
+      managedByCompany: null,
+      valuations: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }],
+    nextCursor: null,
+  });
 });
 
 afterEach(() => {
@@ -57,7 +81,8 @@ describe('DocumentsPage', () => {
       size: 123,
       uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
       assetId: null,
-        metadata: null,
+      assetLabel: null,
+      metadata: null,
       isPublic: false,
       createdAt: new Date().toISOString(),
     };
@@ -81,6 +106,7 @@ describe('DocumentsPage', () => {
       size: 4096,
       uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
       assetId: 'asset-1',
+      assetLabel: 'Riverside Flat',
       description: 'Lease copy',
       metadata: null,
       isPublic: false,
@@ -109,6 +135,7 @@ describe('DocumentsPage', () => {
       size: 1234,
       uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
       assetId: null,
+      assetLabel: null,
       metadata: null,
       isPublic: false,
       createdAt: new Date().toISOString(),
@@ -126,7 +153,7 @@ describe('DocumentsPage', () => {
     expect(screen.getByText(/soft delete/i)).toBeInTheDocument();
   });
 
-  it('renders richer upload form fields in upload modal', async () => {
+  it('renders richer upload form fields with accessible asset dropdown', async () => {
     renderPage();
 
     await waitFor(() => {
@@ -139,5 +166,32 @@ describe('DocumentsPage', () => {
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/document type/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/related asset/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /riverside flat/i })).toBeInTheDocument();
+    });
+  });
+
+  it('shows asset label instead of raw asset id', async () => {
+    const d = {
+      id: 'd4',
+      filename: 'linked.pdf',
+      storageKey: 's3://b/linked.pdf',
+      mimeType: 'application/pdf',
+      size: 123,
+      uploadedBy: { id: 'u1', firstName: 'Alice', lastName: 'A' },
+      assetId: 'asset-1',
+      assetLabel: 'Riverside Flat',
+      metadata: null,
+      isPublic: false,
+      createdAt: new Date().toISOString(),
+    };
+    mockListDocuments.mockResolvedValue({ documents: [d], nextCursor: null });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/riverside flat/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText('asset-1')).not.toBeInTheDocument();
   });
 });

@@ -123,9 +123,9 @@ describe('Documents API', () => {
       .expect(200);
 
     expect(res.body.document.assetId).toBeNull();
-    expect(mockPrisma.document.update).toHaveBeenCalledWith({
+    expect(mockPrisma.document.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' },
       data: { relatedAssetId: null },
-    });
+    }));
   });
 });

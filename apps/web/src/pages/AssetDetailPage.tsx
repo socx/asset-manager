@@ -127,8 +127,8 @@ export default function AssetDetailPage() {
   });
 
   const documentsQuery = useQuery({
-    queryKey: ['asset-documents', id],
-    queryFn: () => listDocuments({ assetId: String(id), limit: 50 }),
+    queryKey: ['asset-documents', id, accessToken],
+    queryFn: () => listDocuments({ assetId: String(id), limit: 50 }, requireAccessToken(accessToken)),
     enabled: Boolean(id) && activeTab === 'documents',
   });
 
@@ -327,7 +327,7 @@ export default function AssetDetailPage() {
     if (!file || !id) return;
     try {
       setDocumentUploadPct(0);
-      await uploadFileWithProgress(file, (pct) => setDocumentUploadPct(pct), id);
+      await uploadFileWithProgress(file, (pct) => setDocumentUploadPct(pct), id, requireAccessToken(accessToken));
       queryClient.invalidateQueries({ queryKey: ['asset-documents', id] });
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setDocumentUploadPct(null);

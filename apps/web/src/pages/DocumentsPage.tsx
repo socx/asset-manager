@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   deleteDocument,
@@ -8,7 +8,7 @@ import {
   type DocumentListItem,
   type ListDocumentsResponse,
 } from '../api/documents';
-import { listPropertyAssets, type PropertyAssetListItem } from '../api/assets';
+import { listPropertyAssets } from '../api/assets';
 import AppShell from '../components/AppShell';
 import ThumbnailImage from '../components/ThumbnailImage';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -47,10 +47,7 @@ export default function DocumentsPage() {
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDescription, setUploadDescription] = useState('');
   const [uploadDocumentTypeId, setUploadDocumentTypeId] = useState('');
-  const [uploadAssetQuery, setUploadAssetQuery] = useState('');
   const [uploadAssetId, setUploadAssetId] = useState<string | null>(null);
-  const [uploadAssetLabel, setUploadAssetLabel] = useState('');
-  const [assetSearchOpen, setAssetSearchOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(1);
@@ -64,8 +61,9 @@ export default function DocumentsPage() {
   }, [viewMode]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['documents', cursor],
-    queryFn: () => listDocuments({ cursor, limit: 20 }),
+    queryKey: ['documents', cursor, accessToken, searchQuery],
+    queryFn: () => listDocuments({ cursor, limit: 20, search: searchQuery.trim() || undefined }, accessToken ?? undefined),
+    enabled: !!accessToken,
   });
 
   const documentTypesQuery = useQuery({
@@ -74,10 +72,10 @@ export default function DocumentsPage() {
     enabled: showUpload && !!accessToken,
   });
 
-  const assetSearchQuery = useQuery({
-    queryKey: ['assets-upload-search', accessToken, uploadAssetQuery],
-    queryFn: () => listPropertyAssets({ q: uploadAssetQuery.trim(), limit: 8 }, accessToken ?? ''),
-    enabled: showUpload && !!accessToken && uploadAssetQuery.trim().length >= 2 && !uploadAssetLabel,
+  const accessibleAssetsQuery = useQuery({
+    queryKey: ['assets-upload-accessible', accessToken],
+    queryFn: () => listPropertyAssets({ limit: 100 }, accessToken ?? ''),
+    enabled: showUpload && !!accessToken,
   });
 
   const docs = data?.documents ?? [];
@@ -86,10 +84,6 @@ export default function DocumentsPage() {
     .filter((doc) => {
       if (filterType === 'images' && !doc.mimeType.startsWith('image/')) return false;
       if (filterType === 'pdfs' && doc.mimeType !== 'application/pdf') return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return (doc.title || doc.filename || '').toLowerCase().includes(q);
-      }
       return true;
     })
     .sort((a, b) => {
@@ -110,7 +104,7 @@ export default function DocumentsPage() {
       return sortOrder === 'asc' ? cmp : -cmp;
     });
 
-  const assetOptions = useMemo(() => assetSearchQuery.data?.assets ?? [], [assetSearchQuery.data]);
+  const assetOptions = accessibleAssetsQuery.data?.assets ?? [];
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteDocument(id),
@@ -134,10 +128,7 @@ export default function DocumentsPage() {
     setUploadTitle('');
     setUploadDescription('');
     setUploadDocumentTypeId('');
-    setUploadAssetQuery('');
     setUploadAssetId(null);
-    setUploadAssetLabel('');
-    setAssetSearchOpen(false);
     setSelectedFile(null);
     setUploadError(null);
     setUploadPct(null);
@@ -169,6 +160,7 @@ export default function DocumentsPage() {
 
   function validateUpload(file: File | null): string | null {
     if (!file) return 'Please choose a file.';
+    if (!uploadAssetId) return 'Please select a related asset.';
     if (!uploadTitle.trim()) return 'Please provide a title.';
     const allowed = new Set(['application/pdf', 'image/png', 'image/jpeg']);
     if (!allowed.has(file.type)) return 'Only PDF, PNG, and JPEG files are allowed.';
@@ -192,7 +184,7 @@ export default function DocumentsPage() {
         title: uploadTitle,
         description: uploadDescription,
         documentTypeId: uploadDocumentTypeId || undefined,
-      }, (pct) => setUploadPct(pct));
+      }, (pct) => setUploadPct(pct), accessToken ?? undefined);
 
       queryClient.setQueryData<ListDocumentsResponse | undefined>(['documents', cursor], (old) => {
         if (!old) return { documents: [result.document], nextCursor: null };
@@ -246,12 +238,8 @@ export default function DocumentsPage() {
     if (!viewerDoc) setImageZoom(1);
   }, [viewerDoc]);
 
-  function selectAsset(asset: PropertyAssetListItem) {
-    const label = `${asset.code} - ${asset.addressLine1}`;
-    setUploadAssetId(asset.id);
-    setUploadAssetLabel(label);
-    setUploadAssetQuery('');
-    setAssetSearchOpen(false);
+  function assetOptionLabel(asset: { code: string; customAlias: string | null }): string {
+    return asset.customAlias || asset.code;
   }
 
   function toggleSort(field: SortField) {
@@ -392,7 +380,7 @@ export default function DocumentsPage() {
                   <span className="uppercase">{typeLabel(d.mimeType)}</span>
                   <span>{formatFileSize(d.size)}</span>
                 </div>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-500">Asset: {d.assetId ?? 'Unlinked'}</p>
+                <p className="mb-2 text-xs text-gray-500 dark:text-gray-500">Asset: {d.assetLabel ?? d.assetId ?? 'Unlinked'}</p>
                 <div className="space-y-1 pb-3 border-t border-gray-200 dark:border-gray-700 pt-2">
                   <p className="text-xs text-gray-600 dark:text-gray-400">{new Date(d.createdAt).toLocaleDateString()}</p>
                   {d.uploadedBy && (
@@ -451,7 +439,7 @@ export default function DocumentsPage() {
                 <tr key={d.id} onClick={() => setViewerDoc(d)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-sky-600 dark:text-sky-400">{d.title || d.filename}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{typeLabel(d.mimeType)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{d.assetId ?? 'Unlinked'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{d.assetLabel ?? d.assetId ?? 'Unlinked'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{d.uploadedBy ? `${d.uploadedBy.firstName} ${d.uploadedBy.lastName}` : '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(d.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatFileSize(d.size)}</td>
@@ -508,22 +496,26 @@ export default function DocumentsPage() {
                   {(documentTypesQuery.data ?? []).map((opt) => (<option key={opt.id} value={opt.id}>{opt.name}</option>))}
                 </select>
               </div>
-              <div className="relative">
+              <div>
                 <label htmlFor="upload-asset" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Related Asset</label>
-                <input id="upload-asset" type="text" value={uploadAssetLabel || uploadAssetQuery} onChange={(e) => {
-                  setUploadAssetLabel('');
-                  setUploadAssetId(null);
-                  setUploadAssetQuery(e.target.value);
-                  setAssetSearchOpen(true);
-                }} onFocus={() => setAssetSearchOpen(true)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" placeholder="Type at least 2 characters" />
-                {assetSearchOpen && !uploadAssetLabel && uploadAssetQuery.trim().length >= 2 && assetOptions.length > 0 && (
-                  <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    {assetOptions.map((asset) => (
-                      <button key={asset.id} type="button" onClick={() => selectAsset(asset)} className="block w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">
-                        {asset.code} - {asset.addressLine1}
-                      </button>
-                    ))}
-                  </div>
+                <select
+                  id="upload-asset"
+                  value={uploadAssetId ?? ''}
+                  onChange={(e) => setUploadAssetId(e.target.value || null)}
+                  disabled={accessibleAssetsQuery.isLoading || assetOptions.length === 0}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-900"
+                >
+                  <option value="">
+                    {accessibleAssetsQuery.isLoading ? 'Loading assets...' : assetOptions.length === 0 ? 'No accessible assets available' : 'Select related asset'}
+                  </option>
+                  {assetOptions.map((asset) => (
+                    <option key={asset.id} value={asset.id}>{assetOptionLabel(asset)}</option>
+                  ))}
+                </select>
+                {!accessibleAssetsQuery.isLoading && assetOptions.length === 0 && (
+                  <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                    You cannot upload a document because you do not currently have access to any assets.
+                  </p>
                 )}
               </div>
               <div onDrop={handleDrop} onDragOver={handleDragOver} className="border-dashed border-2 border-gray-300 dark:border-gray-700 rounded-md p-6 text-center">
@@ -543,7 +535,7 @@ export default function DocumentsPage() {
               )}
               <div className="mt-4 flex justify-end gap-2">
                 <button onClick={closeUploadModal} className="rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
-                <button onClick={() => void handleUploadSubmit()} className="rounded bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50" disabled={uploadPct !== null}>Upload</button>
+                <button onClick={() => void handleUploadSubmit()} className="rounded bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50" disabled={uploadPct !== null || accessibleAssetsQuery.isLoading || assetOptions.length === 0}>Upload</button>
               </div>
             </div>
           </div>
@@ -585,7 +577,7 @@ export default function DocumentsPage() {
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Size</dt><dd>{formatFileSize(viewerDoc.size)}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Uploaded</dt><dd>{new Date(viewerDoc.createdAt).toLocaleString()}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Visibility</dt><dd>{viewerDoc.isPublic ? 'Public' : 'Private'}</dd></div>
-                  <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Related Asset</dt><dd>{viewerDoc.assetId ?? 'Unlinked'}</dd></div>
+                  <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Related Asset</dt><dd>{viewerDoc.assetLabel ?? viewerDoc.assetId ?? 'Unlinked'}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Document Type ID</dt><dd>{viewerDoc.documentTypeId ?? '—'}</dd></div>
                   <div><dt className="text-xs uppercase text-gray-500 dark:text-gray-400">Description</dt><dd>{viewerDoc.description ?? '—'}</dd></div>
                 </dl>

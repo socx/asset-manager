@@ -31,6 +31,11 @@ const upload = multer({
   },
 });
 
+const DOCUMENT_INCLUDE = {
+  uploadedByUser: { select: { id: true, firstName: true, lastName: true } },
+  relatedAsset: { select: { id: true, code: true, customAlias: true } },
+} as const;
+
 function toApiDocument(doc: any) {
   return {
     id: doc.id,
@@ -44,6 +49,7 @@ function toApiDocument(doc: any) {
       ? { id: doc.uploadedByUser.id, firstName: doc.uploadedByUser.firstName, lastName: doc.uploadedByUser.lastName }
       : null,
     assetId: doc.relatedAssetId,
+    assetLabel: doc.relatedAsset ? (doc.relatedAsset.customAlias || doc.relatedAsset.code) : null,
     documentTypeId: doc.documentTypeId,
     description: doc.description,
     metadata: doc.metadata,
@@ -86,7 +92,7 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
     : {};
 
   try {
-    const rows = await prisma.document.findMany({
+    const query = {
       where: {
         ...accessFilter,
         ...(assetId ? { relatedAssetId: assetId } : {}),
@@ -95,11 +101,21 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
         ...searchFilter,
         deletedAt: null,
       },
-      include: { uploadedByUser: { select: { id: true, firstName: true, lastName: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' as const },
       take: limit + 1,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    });
+    };
+
+    let rows: Array<any>;
+    try {
+      rows = await prisma.document.findMany({
+        ...query,
+        include: DOCUMENT_INCLUDE,
+      });
+    } catch (enrichedQueryError) {
+      logger.warn('[documents] list fallback to base query', { err: enrichedQueryError });
+      rows = await prisma.document.findMany(query);
+    }
 
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
@@ -126,7 +142,7 @@ documentsRouter.get('/:id', async (req: AuthenticatedRequest, res: Response): Pr
   }
 
   try {
-    const doc = await prisma.document.findUnique({ where: { id } });
+    const doc = await prisma.document.findUnique({ where: { id }, include: DOCUMENT_INCLUDE });
     if (!doc) {
       res.status(404).json({ message: 'Document not found' });
       return;
@@ -165,6 +181,7 @@ documentsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response): 
       data: {
         relatedAssetId: body.assetId ?? null,
       },
+      include: DOCUMENT_INCLUDE,
     });
 
     res.json({ document: toApiDocument(updated) });
@@ -217,6 +234,7 @@ documentsRouter.post('/', async (req: AuthenticatedRequest, res: Response): Prom
         metadata: body.metadata as any,
         isPublic: body.isPublic ?? false,
       },
+      include: DOCUMENT_INCLUDE,
     });
 
     res.status(201).json({ document: toApiDocument(created) });
@@ -270,6 +288,7 @@ documentsRouter.post('/upload', upload.single('file'), async (req: Authenticated
         metadata: undefined as any,
         isPublic: false,
       },
+      include: DOCUMENT_INCLUDE,
     });
 
     // Enqueue thumbnail generation for image types — best-effort, don't block response

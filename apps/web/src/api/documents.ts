@@ -10,6 +10,7 @@ export interface DocumentListItem {
   ownerId?: string | null;
   uploadedBy?: { id: string; firstName: string; lastName: string } | null; // maps to uploadedById
   assetId?: string | null; // backward compat (maps to relatedAssetId)
+  assetLabel?: string | null;
   documentTypeId?: string | null;
   description?: string | null;
   metadata?: Record<string, unknown> | null;
@@ -41,7 +42,10 @@ export interface UploadDocumentPayload {
   documentTypeId?: string;
 }
 
-export function listDocuments(params?: { assetId?: string; cursor?: string; limit?: number; search?: string; documentTypeId?: string; uploadedById?: string }) {
+export function listDocuments(
+  params?: { assetId?: string; cursor?: string; limit?: number; search?: string; documentTypeId?: string; uploadedById?: string },
+  accessToken?: string,
+) {
   const qs = new URLSearchParams();
   if (params?.assetId) qs.set('assetId', params.assetId);
   if (params?.cursor) qs.set('cursor', params.cursor);
@@ -49,7 +53,10 @@ export function listDocuments(params?: { assetId?: string; cursor?: string; limi
   if (params?.search) qs.set('search', params.search);
   if (params?.documentTypeId) qs.set('documentTypeId', params.documentTypeId);
   if (params?.uploadedById) qs.set('uploadedById', params.uploadedById);
-  return apiRequest<ListDocumentsResponse>(`/documents?${qs.toString()}`, { method: 'GET' });
+  return apiRequest<ListDocumentsResponse>(`/documents?${qs.toString()}`, {
+    method: 'GET',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+  });
 }
 
 export function createDocument(payload: {
@@ -91,13 +98,14 @@ export async function listDocumentTypes(accessToken: string): Promise<DocumentTy
     .map((item) => ({ id: item.id, name: item.name }));
 }
 
-export async function uploadFile(file: File, assetId?: string | null) {
+export async function uploadFile(file: File, assetId?: string | null, accessToken?: string) {
   const fd = new FormData();
   fd.append('file', file);
   if (assetId) fd.append('assetId', assetId);
 
   const res = await fetch(`/api/v1/documents/upload`, {
     method: 'POST',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     body: fd,
   });
 
@@ -109,7 +117,12 @@ export async function uploadFile(file: File, assetId?: string | null) {
   return (await res.json()) as { document: DocumentListItem };
 }
 
-export function uploadFileWithProgress(file: File, onProgress: (pct: number) => void, assetId?: string | null) {
+export function uploadFileWithProgress(
+  file: File,
+  onProgress: (pct: number) => void,
+  assetId?: string | null,
+  accessToken?: string,
+) {
   return new Promise<{ document: DocumentListItem }>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const fd = new FormData();
@@ -117,6 +130,7 @@ export function uploadFileWithProgress(file: File, onProgress: (pct: number) => 
     if (assetId) fd.append('assetId', assetId);
 
     xhr.open('POST', '/api/v1/documents/upload');
+    if (accessToken) xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
     xhr.upload.onprogress = (ev) => {
       if (ev.lengthComputable) {
         const pct = Math.round((ev.loaded / ev.total) * 100);
@@ -140,7 +154,11 @@ export function uploadFileWithProgress(file: File, onProgress: (pct: number) => 
   });
 }
 
-export function uploadDocumentWithProgress(payload: UploadDocumentPayload, onProgress: (pct: number) => void) {
+export function uploadDocumentWithProgress(
+  payload: UploadDocumentPayload,
+  onProgress: (pct: number) => void,
+  accessToken?: string,
+) {
   return new Promise<{ document: DocumentListItem }>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const fd = new FormData();
@@ -152,6 +170,7 @@ export function uploadDocumentWithProgress(payload: UploadDocumentPayload, onPro
     if (payload.documentTypeId) fd.append('documentTypeId', payload.documentTypeId);
 
     xhr.open('POST', '/api/v1/documents/upload');
+    if (accessToken) xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
     xhr.upload.onprogress = (ev) => {
       if (ev.lengthComputable) {
         const pct = Math.round((ev.loaded / ev.total) * 100);

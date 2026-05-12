@@ -427,14 +427,14 @@ export default function AssetDetailPage() {
               <button
                 type="button"
                 onClick={() => setShowEditOverview((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="inline-flex items-center gap-1 rounded border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <PencilSquareIcon className="h-4 w-4" /> Edit
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(true)}
-                className="inline-flex items-center gap-1 rounded-lg border border-red-300 dark:border-red-700 px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="inline-flex items-center gap-1 rounded border border-red-300 dark:border-red-700 px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 <TrashIcon className="h-4 w-4" /> Delete
               </button>
@@ -491,8 +491,8 @@ export default function AssetDetailPage() {
               <textarea className="sm:col-span-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white px-3 py-2 text-sm bg-white dark:bg-gray-900" value={overviewForm.description} onChange={(e) => setOverviewForm((s) => ({ ...s, description: e.target.value }))} placeholder="Description" rows={3} />
             </div>
             <div className="flex gap-2 justify-end">
-              <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => setShowEditOverview(false)}>Cancel</button>
-              <button type="button" className="px-3 py-1.5 text-sm rounded-lg bg-sky-600 text-white" onClick={() => updateOverviewMutation.mutate()} disabled={updateOverviewMutation.isPending}>Save</button>
+              <button type="button" className="px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => setShowEditOverview(false)}>Cancel</button>
+              <button type="button" className="px-3 py-1.5 text-sm rounded border bg-sky-600 text-white" onClick={() => updateOverviewMutation.mutate()} disabled={updateOverviewMutation.isPending}>Save</button>
             </div>
           </div>
         )}
@@ -959,8 +959,8 @@ export default function AssetDetailPage() {
             <p className="text-lg font-semibold text-gray-900 dark:text-white">Delete asset?</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">This performs a soft delete and hides the asset from listings.</p>
             <div className="flex justify-end gap-2">
-              <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-              <button type="button" className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white" onClick={() => deleteAssetMutation.mutate()} disabled={deleteAssetMutation.isPending}>Confirm delete</button>
+              <button type="button" className="px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+              <button type="button" className="px-3 py-1.5 text-sm rounded border bg-red-600 text-white" onClick={() => deleteAssetMutation.mutate()} disabled={deleteAssetMutation.isPending}>Confirm delete</button>
             </div>
           </div>
         </div>

@@ -159,7 +159,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60 transition-colors"
+              className="rounded-lg border bg-sky-600 px-5 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60 transition-colors"
             >
               {isSubmitting ? 'Saving…' : 'Change password'}
             </button>

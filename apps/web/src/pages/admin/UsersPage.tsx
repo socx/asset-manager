@@ -235,7 +235,7 @@ function UserFormModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">{isEdit ? 'Edit user' : 'Create user'}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{isEdit ? 'Edit user' : 'Create user'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-light">✕</button>
         </div>
 
@@ -401,7 +401,7 @@ export default function UsersPage() {
         <div className="flex items-center justify-end mb-6">
           <button
             onClick={() => { setFormServerError(''); setShowCreate(true); }}
-            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+            className="rounded-lg border bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
           >
             + Create user
           </button>

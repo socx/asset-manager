@@ -287,7 +287,7 @@ export default function LookupListPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{activeLabel}</h2>
           <button
             onClick={() => withStepUp(() => { setMutationError(null); setShowCreate(true); })}
-            className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700"
+            className="bg-sky-600 border text-white px-3 py-1.5 rounded text-sm hover:bg-sky-700"
           >
             + Add item
           </button>

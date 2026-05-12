@@ -217,7 +217,7 @@ export default function CompaniesPage() {
       <div className="flex items-center justify-end mb-4">
         <button
           onClick={() => withStepUp(() => { setMutationError(null); setShowCreate(true); })}
-          className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700"
+          className="bg-sky-600 border text-white px-3 py-1.5 rounded text-sm hover:bg-sky-700"
         >
           + New company
         </button>

@@ -14,7 +14,7 @@ import PdfPreview from '../components/PdfPreview';
 import ThumbnailImage from '../components/ThumbnailImage';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuthStore } from '../store/authStore';
-import { ArrowDownIcon, ArrowUpIcon, Bars3Icon, TableCellsIcon } from '@heroicons/react/24/outline';
+import { ArrowDownIcon, ArrowUpIcon, Bars3Icon, Squares2X2Icon, TableCellsIcon } from '@heroicons/react/24/outline';
 
 type SortField = 'filename' | 'size' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
@@ -302,6 +302,11 @@ export default function DocumentsPage() {
     }
   }
 
+  function switchView(mode: 'table' | 'tile') {
+    setViewMode(mode);
+    try { localStorage.setItem(VIEW_MODE_KEY, mode); } catch { /* ignore */ }
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -311,14 +316,23 @@ export default function DocumentsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode(viewMode === 'grid' ? 'table' : 'grid')}
-            title={`Switch to ${viewMode === 'grid' ? 'table' : 'grid'} view`}
-            className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          >
-            {viewMode === 'grid' ? <TableCellsIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
-          </button>
-          <button onClick={openUploadModal} className="bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700">
+          <div className="flex rounded overflow-hidden border border-gray-300 dark:border-gray-600">
+            <button
+              onClick={() => switchView('table')}
+              aria-label="Table view"
+              className={`p-2 ${viewMode === 'table' ? 'bg-sky-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+            >
+              <TableCellsIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => switchView('grid')}
+              aria-label="Tile view"
+              className={`p-2 ${viewMode === 'grid' ? 'bg-sky-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+            >
+              <Squares2X2Icon className="h-4 w-4" />
+            </button>
+          </div>
+          <button onClick={openUploadModal} className="bg-sky-600 border text-white px-3 py-1.5 rounded text-sm hover:bg-sky-700">
             + Upload Document
           </button>
         </div>
@@ -342,9 +356,9 @@ export default function DocumentsPage() {
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${filterType === type
+                className={`px-3 py-1 rounded border text-sm font-medium transition-colors ${filterType === type
                   ? 'bg-sky-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'}`}
               >
                 {type === 'all' && 'All'}
                 {type === 'images' && 'Images'}
@@ -360,9 +374,9 @@ export default function DocumentsPage() {
               <button
                 key={field}
                 onClick={() => toggleSort(field)}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${sortField === field
-                  ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                className={`px-3 py-1 rounded border text-sm font-medium transition-colors flex items-center gap-1 ${sortField === field
+                  ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700'}`}
               >
                 {field === 'filename' && 'Name'}
                 {field === 'size' && 'Size'}
@@ -450,13 +464,13 @@ export default function DocumentsPage() {
                       e.stopPropagation();
                       setViewerDoc(d);
                     }}
-                    className="flex-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded transition-colors"
+                    className="flex-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs border rounded transition-colors"
                   >
                     View
                   </button>
                   <button
                     onClick={(e) => handleDeleteClick(d, e)}
-                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition-colors"
+                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs border rounded transition-colors"
                   >
                     Delete
                   </button>
@@ -505,13 +519,13 @@ export default function DocumentsPage() {
                           e.stopPropagation();
                           setViewerDoc(d);
                         }}
-                        className="rounded bg-sky-600 px-2 py-1 text-xs font-semibold text-white hover:bg-sky-700"
+                        className="text-xs text-sky-600 dark:text-sky-400 hover:underline disabled:opacity-50"
                       >
                         View
                       </button>
                       <button
                         onClick={(e) => handleDeleteClick(d, e)}
-                        className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700"
+                        className="text-xs text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
                       >
                         Delete
                       </button>
@@ -576,7 +590,7 @@ export default function DocumentsPage() {
               <div onDrop={handleDrop} onDragOver={handleDragOver} className="border-dashed border-2 border-gray-300 dark:border-gray-700 rounded-md p-6 text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Drop a file here or</p>
                 <div className="mt-2">
-                  <button type="button" onClick={() => fileRef.current?.click()} className="rounded bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700">Browse Files</button>
+                  <button type="button" onClick={() => fileRef.current?.click()} className="rounded border bg-sky-600 px-3 py-1.5 text-sm text-white hover:bg-sky-700">Browse Files</button>
                   <input ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg" onChange={handleFileChange} className="hidden" />
                 </div>
                 {selectedFile && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Selected: <span className="font-medium">{selectedFile.name}</span> ({formatFileSize(selectedFile.size)})</p>}
@@ -589,8 +603,8 @@ export default function DocumentsPage() {
                 </div>
               )}
               <div className="mt-4 flex justify-end gap-2">
-                <button onClick={closeUploadModal} className="rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800">Cancel</button>
-                <button onClick={() => void handleUploadSubmit()} className="rounded bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50" disabled={uploadPct !== null || accessibleAssetsQuery.isLoading || assetOptions.length === 0}>Upload</button>
+                <button onClick={closeUploadModal} className="rounded border px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800">Cancel</button>
+                <button onClick={() => void handleUploadSubmit()} className="rounded border bg-sky-600 px-3 py-2 text-sm text-white hover:bg-sky-700 disabled:opacity-50" disabled={uploadPct !== null || accessibleAssetsQuery.isLoading || assetOptions.length === 0}>Upload</button>
               </div>
             </div>
           </div>
@@ -603,8 +617,8 @@ export default function DocumentsPage() {
             <div className="mb-3 flex items-center justify-between gap-2">
               <h3 className="font-semibold text-gray-900 dark:text-white">{viewerDoc.title || viewerDoc.filename}</h3>
               <div className="flex items-center gap-2">
-                <a href={`/api/v1/documents/${viewerDoc.id}/file`} download={viewerDoc.filename} className="rounded bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700">Download</a>
-                <button onClick={() => setViewerDoc(null)} className="rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800">Close</button>
+                <a href={`/api/v1/documents/${viewerDoc.id}/file`} download={viewerDoc.filename} className="rounded border bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700">Download</a>
+                <button onClick={() => setViewerDoc(null)} className="rounded border px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800">Close</button>
               </div>
             </div>
             <div className="grid h-[calc(100%-3rem)] grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">

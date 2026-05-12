@@ -229,7 +229,7 @@ export default function SystemLogsPage() {
             <div className="flex gap-2">
               <button
                 onClick={applyFilters}
-                className="w-full rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
+                className="w-full border rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
               >
                 Apply
               </button>

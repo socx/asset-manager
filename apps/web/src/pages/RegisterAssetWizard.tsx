@@ -755,19 +755,19 @@ export default function RegisterAssetWizard() {
       </div>
 
       <div className="flex items-center justify-between">
-        <button type="button" onClick={onCancel} className="text-sm text-gray-500 hover:underline dark:text-gray-400">Cancel</button>
+        <button type="button" onClick={onCancel} className="inline-flex items-center gap-1 rounded border px-4 py-2 text-sm font-medium text-white">Cancel</button>
         <div className="flex gap-3">
           {step > 0 && (
-            <button type="button" onClick={onBack} className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+            <button type="button" onClick={onBack} className="inline-flex items-center gap-1 rounded border px-4 py-2 text-sm font-medium text-white">
               <ChevronLeftIcon className="h-4 w-4" /> Back
             </button>
           )}
           {step < 6 ? (
-            <button type="button" onClick={onNext} className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">
+            <button type="button" onClick={onNext} className="inline-flex items-center gap-1 rounded border bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">
               Next <ChevronRightIcon className="h-4 w-4" />
             </button>
           ) : (
-            <button type="button" onClick={onSubmit} disabled={mutation.isPending} className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={onSubmit} disabled={mutation.isPending} className="inline-flex items-center gap-1 rounded border bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50">
               {mutation.isPending ? 'Registering…' : 'Confirm & Register'}
             </button>
           )}

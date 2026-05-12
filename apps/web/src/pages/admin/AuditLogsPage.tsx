@@ -249,7 +249,7 @@ export default function AuditLogsPage() {
             <div className="flex gap-2">
               <button
                 onClick={applyFilters}
-                className="w-full rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
+                className="w-full rounded border text-sm bg-sky-600 border-gray-300 px-4 py-2 text-white hover:bg-sky-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
               >
                 Apply
               </button>
@@ -271,7 +271,7 @@ export default function AuditLogsPage() {
           {allLogs.length > 0 && (
             <button
               onClick={() => exportToCsv(allLogs)}
-              className="text-sm border bg-sky-600 border-gray-300 text-white rounded px-3 py-1.5 hover:bg-sky-700 flex items-center gap-1.5"
+              className="rounded border text-sm bg-sky-600 border-gray-300 text-white px-3 py-1.5 hover:bg-sky-700 flex items-center gap-1.5"
             >
               ↓ Export CSV
             </button>

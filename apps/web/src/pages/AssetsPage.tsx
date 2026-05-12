@@ -10,6 +10,8 @@ import { useAuthStore } from '../store/authStore';
 import { listPropertyAssets, type PropertyAssetListItem } from '../api/assets';
 import { requireAccessToken, formatCurrency } from '../lib/utils';
 
+type ViewMode = 'grid' | 'table';
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -115,10 +117,10 @@ export default function AssetsPage() {
   const [search, setSearch] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const [viewMode, setViewMode] = useState<'table' | 'tile'>(() => {
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
       const stored = localStorage.getItem(VIEW_MODE_KEY);
-      return stored === 'tile' ? 'tile' : 'table';
+      return stored === 'grid' ? 'grid' : 'table';
     } catch {
       return 'table';
     }
@@ -141,7 +143,7 @@ export default function AssetsPage() {
     placeholderData: (prev) => prev,
   });
 
-  function switchView(mode: 'table' | 'tile') {
+  function switchView(mode: ViewMode) {
     setViewMode(mode);
     try { localStorage.setItem(VIEW_MODE_KEY, mode); } catch { /* ignore */ }
   }
@@ -166,7 +168,7 @@ export default function AssetsPage() {
 
         <div className="flex items-center gap-2 ml-auto py-6">
           {/* View toggle */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+          <div className="flex rounded border overflow-hidden border border-gray-300 dark:border-gray-600">
             <button
               onClick={() => switchView('table')}
               aria-label="Table view"
@@ -175,9 +177,9 @@ export default function AssetsPage() {
               <TableCellsIcon className="h-4 w-4" />
             </button>
             <button
-              onClick={() => switchView('tile')}
+              onClick={() => switchView('grid')}
               aria-label="Tile view"
-              className={`p-2 ${viewMode === 'tile' ? 'bg-sky-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+              className={`p-2 ${viewMode === 'grid' ? 'bg-sky-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
             >
               <Squares2X2Icon className="h-4 w-4" />
             </button>
@@ -185,7 +187,7 @@ export default function AssetsPage() {
 
           <button
             onClick={() => navigate('/assets/new')}
-            className="px-3 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700"
+            className="px-3 py-2 text-sm font-medium rounded border bg-sky-600 text-white hover:bg-sky-700"
           >
             Register New Asset
           </button>
@@ -226,7 +228,7 @@ export default function AssetsPage() {
         </div>
       )}
 
-      {!isLoading && !isError && assets.length > 0 && viewMode === 'tile' && (
+      {!isLoading && !isError && assets.length > 0 && viewMode === 'grid' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {assets.map((a) => (
             <AssetTile key={a.id} asset={a} onClick={() => navigate(`/assets/${a.id}`)} />

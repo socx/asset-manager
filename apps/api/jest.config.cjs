@@ -6,7 +6,6 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
-  passWithNoTests: true,
   setupFiles: ['<rootDir>/jest.setup.ts'],
   testMatch: ['**/*.test.ts', '**/*.spec.ts'],
   coverageDirectory: 'coverage',

@@ -81,29 +81,64 @@ documentsRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promi
   const limit = Math.min(Number(req.query['limit']) || 20, 100);
   const cursor = typeof req.query['cursor'] === 'string' ? req.query['cursor'] : undefined;
 
-  // Non-admins can only see documents they own or uploaded (or public ones)
-  const accessFilter = isAdmin ? {} : {
-    OR: [
-      { ownerId: actor.sub },
-      { uploadedById: actor.sub },
-      { isPublic: true },
-    ],
-  };
+  // Non-admins can only see documents they own/uploaded, public documents,
+  // or documents linked to an asset they own or manage.
+  const accessCondition = isAdmin
+    ? null
+    : {
+        OR: [
+          { ownerId: actor.sub },
+          { uploadedById: actor.sub },
+          { isPublic: true },
+          {
+            relatedAsset: {
+              OR: [
+                { ownerId: actor.sub },
+                { managedByUserId: actor.sub },
+              ],
+            },
+          },
+        ],
+      };
 
-  const searchFilter = search
-    ? { title: { contains: search, mode: 'insensitive' as const } }
-    : {};
+  // Search across title, document type name, related asset code/alias, and uploader name.
+  const searchCondition = search
+    ? {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' as const } },
+          { documentType: { name: { contains: search, mode: 'insensitive' as const } } },
+          {
+            relatedAsset: {
+              OR: [
+                { code: { contains: search, mode: 'insensitive' as const } },
+                { customAlias: { contains: search, mode: 'insensitive' as const } },
+              ],
+            },
+          },
+          {
+            uploadedByUser: {
+              OR: [
+                { firstName: { contains: search, mode: 'insensitive' as const } },
+                { lastName: { contains: search, mode: 'insensitive' as const } },
+              ],
+            },
+          },
+        ],
+      }
+    : null;
+
+  // Build AND array so that multiple OR-bearing conditions don't clobber each other.
+  const andConditions: object[] = [];
+  if (accessCondition) andConditions.push(accessCondition);
+  if (searchCondition) andConditions.push(searchCondition);
+  if (assetId) andConditions.push({ relatedAssetId: assetId });
+  if (documentTypeId) andConditions.push({ documentTypeId });
+  if (uploadedById) andConditions.push({ uploadedById });
+  andConditions.push({ deletedAt: null });
 
   try {
     const query = {
-      where: {
-        ...accessFilter,
-        ...(assetId ? { relatedAssetId: assetId } : {}),
-        ...(documentTypeId ? { documentTypeId } : {}),
-        ...(uploadedById ? { uploadedById } : {}),
-        ...searchFilter,
-        deletedAt: null,
-      },
+      where: andConditions.length === 1 ? andConditions[0] : { AND: andConditions },
       orderBy: { createdAt: 'desc' as const },
       take: limit + 1,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
